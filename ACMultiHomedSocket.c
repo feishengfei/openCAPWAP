@@ -160,6 +160,7 @@ CWBool CWNetworkInitSocketServerMultiHomed(CWMultiHomedSocket *sockPtr,
 	/* for each network interface... */
 	for (ifihead = ifi = get_ifi_info((gNetworkPreferredFamily == CW_IPv6) ? AF_INET6 : AF_INET, 0); ifi != NULL; ifi = ifi->ifi_next) {
 #endif
+		CWLog("%s] IPV6 ifi->ifi_name:%s\n", __FUNCTION__, ifi->ifi_name);
 		/* bind a unicast address */
 		if((sock = socket(ifi->ifi_addr->sa_family, SOCK_DGRAM, 0)) < 0) {
 
@@ -174,7 +175,8 @@ CWBool CWNetworkInitSocketServerMultiHomed(CWMultiHomedSocket *sockPtr,
 		sock_set_port_cw(ifi->ifi_addr, htons(port));
 		
 		struct sockaddr_in * tmpAddr =  (struct sockaddr_in *) ifi->ifi_addr;
-		CWLog("ip: %s port: %d", inet_ntoa(tmpAddr->sin_addr), htons(tmpAddr->sin_port));
+		CWLog("%s:%s] ip: %s port: %d", __FILE__, __FUNCTION__,
+				inet_ntoa(tmpAddr->sin_addr), htons(tmpAddr->sin_port));
 		
 		if(bind(sock, (struct sockaddr*) ifi->ifi_addr, CWNetworkGetAddressSize((CWNetworkLev4Address*)ifi->ifi_addr)) < 0) {
 
@@ -185,7 +187,9 @@ CWBool CWNetworkInitSocketServerMultiHomed(CWMultiHomedSocket *sockPtr,
 		}
 		
 		CWUseSockNtop(ifi->ifi_addr, 
-			      CWLog("bound %s (%d, %s)", str, ifi->ifi_index, ifi->ifi_name););
+			      CWLog("%s:%s] bound %s (%d, %s)", __FILE__, __FUNCTION__,
+						str, ifi->ifi_index, ifi->ifi_name);
+		);
 		
 		/* store socket inside multihomed socket */
 		CW_CREATE_OBJECT_ERR(p, CWMultiHomedInterface, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
@@ -240,7 +244,8 @@ CWBool CWNetworkInitSocketServerMultiHomed(CWMultiHomedSocket *sockPtr,
 		}
 		
 		CWUseSockNtop(ifi->ifi_addr, 
-			      CWLog("Data channel bound %s (%d, %s)", str, ifi->ifi_index, ifi->ifi_name););
+			      CWLog("%s:%s] Data channel bound %s (%d, %s)", __FILE__, __FUNCTION__,
+			      	  str, ifi->ifi_index, ifi->ifi_name););
 			      
 		CW_COPY_NET_ADDR_PTR(&(p->dataAddr), ifi->ifi_addr);
 		
@@ -347,6 +352,7 @@ CWBool CWNetworkInitSocketServerMultiHomed(CWMultiHomedSocket *sockPtr,
 #else
 		for (ifihead = ifi = get_ifi_info(AF_INET, 0); ifi != NULL; ifi = ifi->ifi_next) {
 #endif
+		CWLog("%s]IPV4 ifi->ifi_name:%s\n", __FUNCTION__, ifi->ifi_name);
 			CWMultiHomedInterface *s = CWNetworkGetInterfaceAlreadyStored(interfaceList, ifi->ifi_index);
 			
 			if(s == NULL ||
@@ -869,7 +875,8 @@ int CWNetworkCountInterfaceAddresses(CWMultiHomedSocket *sockPtr) {
 	int i;
 	
 	if(sockPtr == NULL) return 0;
-	
+	CWLog("%s count:%d\n", __FUNCTION__, sockPtr->count);
+
 	for(i = 0; i < sockPtr->count; i++) {
 		
 		if(sockPtr->interfaces[i].kind == CW_PRIMARY) count++;

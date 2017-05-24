@@ -269,12 +269,10 @@ void CWACInit() {
 	gInterfacesCount = CWNetworkCountInterfaceAddresses(&gACSocket);
 	CWLog("Found %d Network Interface(s)", gInterfacesCount);
 	
-#if 0	//markded by frank 
 	if (gInterfacesCount<=0){
 		CWLog("Can't start AC %d\n", __LINE__);
 		exit(1);
 	}
-#endif
 
 	CW_CREATE_ARRAY_ERR(gInterfaces, 
 			    gInterfacesCount,

@@ -215,19 +215,14 @@ CWBool CWParseTheFile(CWBool isCount) {
 /* parses the configuration file */
 CWBool CWParseConfigFile() {
 
-	CWLog("%s %d\n", __FUNCTION__, __LINE__);
 	if( !(CWConfigFileInitLib()) ) return CW_FALSE;
 
-	CWLog("%s %d\n", __FUNCTION__, __LINE__);
 	/* just count the objects */
 	if( !CWParseTheFile(CW_TRUE) ) return CW_FALSE;
 	
-	CWLog("%s %d\n", __FUNCTION__, __LINE__);
 	/* actually parse */
 	if( !CWParseTheFile(CW_FALSE) ) return CW_FALSE;
 
-	CWLog("%s %d\n", __FUNCTION__, __LINE__);
-	
 	#ifdef CW_DEBUGGING
 		if(1){
 			int i;
@@ -244,7 +239,6 @@ CWBool CWParseConfigFile() {
 		}
 		CWDebugLog("*** Config File END ***");
 	#endif
-	CWLog("%s %d\n", __FUNCTION__, __LINE__);
 	
 	return CWConfigFileDestroyLib();
 }
