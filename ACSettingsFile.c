@@ -42,7 +42,7 @@
 #include "../dmalloc-5.5.0/dmalloc.h"
 #endif
 
-#define CW_SETTINGS_FILE 	"settings.ac.txt"
+#define CW_SETTINGS_FILE 	"/home/frankzhou/github/openCAPWAP/settings.ac.txt"
 
 #define CWMIN_DEFAULT	3
 #define CWMAX_DEFAULT	10
@@ -69,11 +69,15 @@ CWBool CWParseSettingsFile()
 		
 	gSettingsFile = fopen (CW_SETTINGS_FILE, "rb");
 	if (gSettingsFile == NULL) {
+		CWDebugLog("%s %d\n", __FUNCTION__, __LINE__);
 		CWErrorRaiseSystemError(CW_ERROR_GENERAL);
 	}
 	
-	CW_CREATE_ARRAY_ERR(gDefaultQosValues, NUM_QOS_PROFILES, WTPQosValues, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
+	CWLog("%s %d\n", __FUNCTION__, __LINE__);
+	CW_CREATE_ARRAY_ERR(gDefaultQosValues, NUM_QOS_PROFILES, WTPQosValues, CWDebugLog("%s %d\n", __FUNCTION__, __LINE__);return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
 	
+	CWLog("%s %d\n", __FUNCTION__, __LINE__);
+
 	while((line = (char*)CWGetCommand(gSettingsFile)) != NULL) 
 	{
 		char* startTag=NULL;

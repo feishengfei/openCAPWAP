@@ -104,9 +104,9 @@ void CWErrorPrint(CWErrorHandlingInfo *infoPtr, const char *desc, const char *fi
 	if(infoPtr == NULL) return;
 	
 	if(infoPtr->message != NULL && infoPtr->message[0]!='\0') {
-		CWLog("Error: %s. %s .", desc, infoPtr->message);
+		CWLog("1 Error: %s. %s .", desc, infoPtr->message);
 	} else {
-		CWLog("Error: %s", desc);
+		CWLog("2 Error: %s", desc);
 	}
 	CWLog("(occurred at line %d in file %s, catched at line %d in file %s).",
 		infoPtr->line, infoPtr->fileName, line, fileName);

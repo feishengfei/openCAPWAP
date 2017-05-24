@@ -618,7 +618,7 @@ int main (int argc, const char * argv[]) {
 	CWErrorHandlingInitLib();
 	if(!CWParseSettingsFile()){
 		//Elena: fprintf
-		fprintf(stderr, "Can't start WTP");
+		fprintf(stderr, "Can't start WTP %d\n", __LINE__);
 		exit(1);
 	}
 	
@@ -629,21 +629,21 @@ int main (int argc, const char * argv[]) {
 	/* Capwap receive packets list */
 	if (!CWErr(CWCreateSafeList(&gPacketReceiveList)))
 	{
-		CWLog("Can't start WTP");
+		CWLog("Can't start WTP %d\n", __LINE__);
 		exit(1);
 	}
 
 	/* Capwap receive packets list */
 	if (!CWErr(CWCreateSafeList(&gPacketReceiveDataList)))
 	{
-		CWLog("Can't start WTP");
+		CWLog("Can't start WTP %d\n", __LINE__);
 		exit(1);
 	}
 	
 	/* Capwap receive frame list */
 	if (!CWErr(CWCreateSafeList(&gFrameList)))
 	{
-		CWLog("Can't start WTP");
+		CWLog("Can't start WTP %d\n", __LINE__);
 		exit(1);
 	}
 
@@ -679,7 +679,7 @@ int main (int argc, const char * argv[]) {
 #else
 	if( !CWErr(CWSecurityInitLib())	|| !CWErr(CWWTPLoadConfiguration()) ) {
 #endif
-		CWLog("Can't start WTP");
+		CWLog("Can't start WTP %d\n", __LINE__);
 		exit(1);
 	}
 

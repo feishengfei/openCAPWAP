@@ -1,0 +1,9 @@
+*.o
+*.swp
+*.swo
+tags
+.svn
+*.log
+AC
+WTP
+WUA

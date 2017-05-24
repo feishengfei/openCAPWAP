@@ -40,7 +40,7 @@
  
 #ifndef __CAPWAP_CWCommon_HEADER__
 #define __CAPWAP_CWCommon_HEADER__
-
+#define __inline__
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -65,6 +65,8 @@
 #include "wireless_copy.h"
        #include <netpacket/packet.h>
       #include <net/ethernet.h> 
+/* CAPWAP local headers */
+#include "CWLog.h"
        
 /* *********** NL80211 support ************** */
 #include <stdio.h>
@@ -181,7 +183,7 @@ extern char * wtpLogFile;
 
 #include "CWStevens.h"
 #include "config.h"
-#include "CWLog.h"
+#include "CWSyslog.h"
 #include "CWErrorHandling.h"
 
 #include "CWRandom.h"

@@ -57,7 +57,7 @@
 #define CW_MAX_WTP				100
 #define CW_CRITICAL_TIMER_EXPIRED_SIGNAL	SIGUSR2
 #define CW_SOFT_TIMER_EXPIRED_SIGNAL		SIGUSR1
-#define AC_LOG_FILE_NAME				"/var/log/ac.log.txt"
+#define AC_LOG_FILE_NAME				"AC"
 #define MAC_ADDR_LEN		6
 #define DEST_ADDR_START		4
 #define SOURCE_ADDR_START	10

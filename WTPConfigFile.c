@@ -42,7 +42,7 @@
 #include "../dmalloc-5.5.0/dmalloc.h"
 #endif
 
-const char *CW_CONFIG_FILE = "config.wtp";
+const char *CW_CONFIG_FILE = "/home/frankzhou/github/openCAPWAP/config.wtp";
 
 CWBool CWConfigFileInitLib() {
 	

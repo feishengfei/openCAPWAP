@@ -128,14 +128,21 @@ int main (int argc, const char * argv[]) {
 	
 	if (argc <= 1)
 		printf("Usage: AC working_path\n");
+	CWDebugLog("%s %d\n", __FUNCTION__, __LINE__);
+	CWLog("%s %d\n", __FUNCTION__, __LINE__);
 
-	if (daemon(1, 0) < 0)
+	gEnabledLog = 1;
+
+	if (daemon(1, 1) < 0)
 		exit(1);
 
 	if (chdir(argv[1]) != 0)
 		exit(1);
-	
+
+	CWDebugLog("%s %d\n", __FUNCTION__, __LINE__);
+	CWLog("%s %d\n", __FUNCTION__, __LINE__);
 	CWACInit();
+	CWDebugLog("%s %d\n", __FUNCTION__, __LINE__);
 	CWACEnterMainLoop();
 	CWACDestroy();  
 	 
@@ -178,7 +185,7 @@ void CWACInit() {
 	
 	if(!CWParseSettingsFile())
 	{
-		CWLog("Can't start AC");
+		CWLog("Can't start AC %d\n", __LINE__);
 		exit(1);
 	}
 	
@@ -189,10 +196,12 @@ void CWACInit() {
 	CWLog("Starting AC");
 
 	CWThreadSetSignals(SIG_BLOCK, 1, SIGALRM);
+	CWLog("Starting AC %d\n", __LINE__);
 	if (timer_init() == 0) {
 		CWLog("Can't init timer module");
 		exit(1);
 	}
+	CWLog("Starting AC %d\n", __LINE__);
 
 /* Elena Agostini - 04/2014 */
 	if(!CWErr(CWParseConfigFile()) ||
@@ -205,9 +214,10 @@ void CWACInit() {
 	   !CWErr(CWCreateThreadMutex(&gActiveWTPsMutex))) {
 
 		/* error starting */
-		CWLog("Can't start AC");
+		CWLog("Can't start AC %d\n", __LINE__);
 		exit(1);
 	}
+	CWLog("Starting AC %d\n", __LINE__);
 
 /* Elena Agostini - 04/2014 */
 #if !defined(CW_NO_DTLS) || defined(CW_DTLS_DATA_CHANNEL)
@@ -223,7 +233,7 @@ void CWACInit() {
 						gACPassword,
 						CW_FALSE,
 						CWACSemPostForOpenSSLHack))) {
-			CWLog("Can't start AC");
+			CWLog("Can't start AC %d\n", __LINE__);
 			exit(1);
 		}
 	} else { /* preshared */
@@ -233,7 +243,7 @@ void CWACInit() {
 						NULL,
 						CW_FALSE,
 						CWACSemPostForOpenSSLHack))) {
-			CWLog("Can't start AC");
+			CWLog("Can't start AC %d\n", __LINE__);
 			exit(1);
 		}
 	}
@@ -259,10 +269,12 @@ void CWACInit() {
 	gInterfacesCount = CWNetworkCountInterfaceAddresses(&gACSocket);
 	CWLog("Found %d Network Interface(s)", gInterfacesCount);
 	
+#if 0	//markded by frank 
 	if (gInterfacesCount<=0){
-		CWLog("Can't start AC");
+		CWLog("Can't start AC %d\n", __LINE__);
 		exit(1);
 	}
+#endif
 
 	CW_CREATE_ARRAY_ERR(gInterfaces, 
 			    gInterfacesCount,
