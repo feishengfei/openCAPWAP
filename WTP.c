@@ -841,8 +841,10 @@ CWBool CWWTPInitConfiguration() {
 	CWWTPResetRebootStatistics(&gWTPRebootStatistics);
 	
 	//Elena Agostini - 07/2014: nl80211 support
+	/* TODO frankzhou temp
 	if(CWWTPGetRadioGlobalInfo() == CW_FALSE)
 		return CW_FALSE;
+	*/
 	
 	return CW_TRUE;
 }

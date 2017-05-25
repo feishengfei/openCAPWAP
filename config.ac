@@ -39,6 +39,6 @@
 
 # Elena Agostini - 02/2014
 # OpenSSL params
-</AC_SECURITY_CERTIFICATE>      root.pem
-</AC_SECURITY_KEYFILE>      server.pem
-</AC_SECURITY_PASSWORD>         prova
+</AC_SECURITY_CERTIFICATE>/home/frankzhou/github/openCAPWAP/root.pem
+</AC_SECURITY_KEYFILE>/home/frankzhou/github/openCAPWAP/client.pem
+</AC_SECURITY_PASSWORD>prova

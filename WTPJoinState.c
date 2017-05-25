@@ -145,6 +145,7 @@ CWStateTransition CWWTPEnterJoin() {
 /* Elena Agostini - 04/2014 */	
 #if !defined(CW_NO_DTLS) || defined(CW_DTLS_DATA_CHANNEL)
 	if(gACInfoPtr->security == CW_X509_CERTIFICATE) {
+		CWLog("Initiate Data Channel:CW_X509_CERTIFICATE");
 		/*
 		 * Elena Agostini - 02/2014
 		 * Dynamic OpenSSL params
@@ -162,6 +163,7 @@ CWStateTransition CWWTPEnterJoin() {
 			return CW_ENTER_DISCOVERY;
 		}
 	} else { 
+		CWLog("Initiate Data Channel:CW_PRESHARED");
 		/* pre-shared keys */
 		if(!CWErr(CWSecurityInitContext(&gWTPSecurityContext,
 						NULL,
