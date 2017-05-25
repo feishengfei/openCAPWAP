@@ -128,8 +128,6 @@ int main (int argc, const char * argv[]) {
 	
 	if (argc <= 1)
 		printf("Usage: AC working_path\n");
-	CWDebugLog("%s %d\n", __FUNCTION__, __LINE__);
-	CWLog("%s %d\n", __FUNCTION__, __LINE__);
 
 	gEnabledLog = 1;
 
@@ -139,10 +137,7 @@ int main (int argc, const char * argv[]) {
 	if (chdir(argv[1]) != 0)
 		exit(1);
 
-	CWDebugLog("%s %d\n", __FUNCTION__, __LINE__);
-	CWLog("%s %d\n", __FUNCTION__, __LINE__);
 	CWACInit();
-	CWDebugLog("%s %d\n", __FUNCTION__, __LINE__);
 	CWACEnterMainLoop();
 	CWACDestroy();  
 	 
@@ -252,18 +247,6 @@ void CWACInit() {
 
 	for(i = 0; i < gMaxWTPs; i++) {
 		gWTPs[i].isNotFree = CW_FALSE;
-		
-		/*
-		if (!gWTPs[i].tap_fd){
-		    init_AC_tap_interface(i);
-		}
-		*/
-	}
-//Elena Agostini: Unique AC Tap Interface
-	if(!CWACTapInterfaceInit())
-	{
-		CWLog("Error in AC Tap Interface creation");
-		exit(-1);
 	}
 	/* store network interface's addresses */
 	gInterfacesCount = CWNetworkCountInterfaceAddresses(&gACSocket);
