@@ -587,7 +587,7 @@ int main (int argc, const char * argv[]) {
 	pid_t pid;
 	
 	if (argc <= 1)
-		printf("Usage: WTP working_path\n");
+		printf("Usage: WTP working_path(dir where settings.wtp.txt & config.wtp exist)\n");
 
 	if ((pid = fork()) < 0)
 		exit(1);

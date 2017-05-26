@@ -128,6 +128,7 @@ int main (int argc, const char * argv[]) {
 	
 	if (argc <= 1)
 		printf("Usage: AC working_path\n");
+		printf("Usage: AC working_path(where settings.ac.txt & config.ac exist)\n");
 
 	gEnabledLog = 1;
 

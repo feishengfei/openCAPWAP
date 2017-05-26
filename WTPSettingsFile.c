@@ -42,7 +42,7 @@
 #include "../dmalloc-5.5.0/dmalloc.h"
 #endif
 
-#define CW_SETTINGS_FILE 	"/home/frankzhou/github/openCAPWAP/settings.wtp.txt"
+#define CW_SETTINGS_FILE 	"settings.wtp.txt"
 
 FILE* gSettingsFile=NULL;
 char* gInterfaceName=NULL;

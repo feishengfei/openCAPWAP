@@ -42,8 +42,8 @@
 
 # Elena Agostini - 02/2014
 # OpenSSL params
-</WTP_SECURITY_CERTIFICATE>/home/frankzhou/github/openCAPWAP/root.pem
-</WTP_SECURITY_KEYFILE>/home/frankzhou/github/openCAPWAP/client.pem
+</WTP_SECURITY_CERTIFICATE>root.pem
+</WTP_SECURITY_KEYFILE>client.pem
 </WTP_SECURITY_PASSWORD>prova
 
 # Elena Agostini - 02/2014
