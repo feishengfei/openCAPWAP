@@ -205,24 +205,6 @@ CWBool CWAssembleJoinResponse(CWProtocolMessage **messagesPtr,
 		return CW_FALSE;
 	} 
 		
-	//Elena Agostini - 07/2014: wtp radio info replay
-	int indexWTPRadio;
-	unsigned char phyStandardValue;
-	for(indexWTPRadio=0; indexWTPRadio< WTPProtocolManager->radiosInfo.radioCount; indexWTPRadio++) {
-		
-		if(!(CWAssembleMsgElemACWTPRadioInformation(&(msgElems[++k]), 
-													WTPProtocolManager->radiosInfo.radiosInfo[indexWTPRadio].gWTPPhyInfo.radioID, 
-													WTPProtocolManager->radiosInfo.radiosInfo[indexWTPRadio].gWTPPhyInfo.phyStandardValue))
-		)
-		{
-			CWErrorHandleLast();
-			int i;
-			for(i = 0; i <= k; i++) {CW_FREE_PROTOCOL_MESSAGE(msgElems[i]);}
-			CW_FREE_OBJECT(msgElems);
-			return CW_FALSE; // error will be handled by the caller
-		}
-	}
-		
 	current=msgElemList;
 	for (i=0; i<msgElemCount; i++) {
 
@@ -309,10 +291,6 @@ CWBool CWParseJoinRequestMessage(char *msg,
 	completeMsg.msg = msg;
 	completeMsg.offset = 0;
 
-	//Elena Agostini: nl80211 support
-	valuesPtr->tmpPhyInfo.numPhyActive=0;
-	CW_CREATE_ARRAY_CALLOC_ERR(valuesPtr->tmpPhyInfo.singlePhyInfo, WTP_RADIO_MAX, WTPSinglePhyInfo, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-
 	if(!(CWParseControlHeader(&completeMsg, &controlVal)))
 		/* will be handled by the caller */
 		return CW_FALSE;
@@ -384,19 +362,6 @@ CWBool CWParseJoinRequestMessage(char *msg,
 				break;
 			
 			/*
-			 * Elena Agostini - 08/2014: nl80211 support
-		 	 */
-			case CW_MSG_ELEMENT_IEEE80211_WTP_RADIO_INFORMATION_CW_TYPE:
-				if(valuesPtr->tmpPhyInfo.numPhyActive < WTP_RADIO_MAX)
-					if(!(CWParseWTPRadioInformation(&completeMsg, 
-													elemLen, 
-													&(valuesPtr->tmpPhyInfo.singlePhyInfo[valuesPtr->tmpPhyInfo.numPhyActive].radioID),
-													&(valuesPtr->tmpPhyInfo.singlePhyInfo[valuesPtr->tmpPhyInfo.numPhyActive].phyStandardValue)
-													)
-					))return CW_FALSE;
-					valuesPtr->tmpPhyInfo.numPhyActive++;
-				break;
-			/*
 			 * Elena Agostini - 02/2014: ECN Support Msg Elem MUST be included in Join Request/Response Messages
 		 	 */
 			case CW_MSG_ELEMENT_ECN_SUPPORT_CW_TYPE:
@@ -449,7 +414,7 @@ CWBool CWSaveJoinRequestMessage(CWProtocolJoinRequestValues *joinRequest,
 	/*
 	 * Elena Agostini - 04/2014: SessionID string wasn't saved in right way
 	 */
-	 CW_CREATE_ARRAY_ERR(WTPProtocolManager->sessionID, WTP_SESSIONID_LENGTH, unsigned char, return;);
+	 CW_CREATE_ARRAY_ERR(WTPProtocolManager->sessionID, WTP_SESSIONID_LENGTH, unsigned char, return CW_FALSE;);
 	 memcpy(WTPProtocolManager->sessionID, joinRequest->sessionID, WTP_SESSIONID_LENGTH);
 	//CW_CREATE_STRING_FROM_STRING_ERR(WTPProtocolManager->sessionID, joinRequest->sessionID, {return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);});
 
@@ -459,76 +424,6 @@ CWBool CWSaveJoinRequestMessage(CWProtocolJoinRequestValues *joinRequest,
 	WTPProtocolManager->radiosInfo.radioCount = (joinRequest->WTPDescriptor).radiosInUse;
 	CW_FREE_OBJECT(WTPProtocolManager->radiosInfo.radiosInfo);
 
-	CW_CREATE_ARRAY_ERR(WTPProtocolManager->radiosInfo.radiosInfo, 
-			    WTPProtocolManager->radiosInfo.radioCount, 
-			    CWWTPRadioInfoValues,
-			    return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-	
-	int i, indexWlan;
-	for(i=0; i< WTPProtocolManager->radiosInfo.radioCount; i++) {
-		//Elena Agostini: per ora vengono salvati solo WTP_RADIO_MAX (ACNL80211.h) message elements dal join request.
-		//Si dovranno trovare altre soluzioni quando si lavorerà al management
-		if(i >= WTP_RADIO_MAX) continue;
-		/*WTPProtocolManager->radiosInfo.radiosInfo[i].stationCount = 0;*/
-		/* default value for CAPWAP */
-        WTPProtocolManager->radiosInfo.radiosInfo[i].adminState = ENABLED;
-        WTPProtocolManager->radiosInfo.radiosInfo[i].adminCause = AD_NORMAL;
-        WTPProtocolManager->radiosInfo.radiosInfo[i].operationalState = DISABLED;
-        WTPProtocolManager->radiosInfo.radiosInfo[i].operationalCause = OP_NORMAL;
-        WTPProtocolManager->radiosInfo.radiosInfo[i].TxQueueLevel = 0;
-        WTPProtocolManager->radiosInfo.radiosInfo[i].wirelessLinkFramesPerSec = 0;
-        //Duplicate
-        WTPProtocolManager->radiosInfo.radiosInfo[i].radioID = CWIEEEBindingGetIndexFromDevID(joinRequest->tmpPhyInfo.singlePhyInfo[i].radioID);
-        WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.radioID = joinRequest->tmpPhyInfo.singlePhyInfo[i].radioID;
-        
-		//802.11a/b/g/n total value
-		WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.phyStandardValue = PHY_NO_STANDARD;
-        if( (joinRequest->tmpPhyInfo.singlePhyInfo[i].phyStandardValue & 0x1) == PHY_STANDARD_B)
-        {
-			WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.phyStandardB=CW_TRUE;
-			WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.phyStandardValue += PHY_STANDARD_B;
-		}
-		else
-			WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.phyStandardB=CW_FALSE;
-			
-		if( (joinRequest->tmpPhyInfo.singlePhyInfo[i].phyStandardValue & 0x2) == PHY_STANDARD_A)
-		{
-			WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.phyStandardA=CW_TRUE;
-			WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.phyStandardValue += PHY_STANDARD_A;
-		}
-		else
-			WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.phyStandardA=CW_FALSE;
-		
-		if( (joinRequest->tmpPhyInfo.singlePhyInfo[i].phyStandardValue & 0x4) == PHY_STANDARD_G)
-		{
-			WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.phyStandardG=CW_TRUE;
-			WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.phyStandardValue += PHY_STANDARD_G;
-		}
-		else
-			WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.phyStandardG=CW_FALSE;
-		
-		if( (joinRequest->tmpPhyInfo.singlePhyInfo[i].phyStandardValue & 0x8) == PHY_STANDARD_N)
-		{
-			WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.phyStandardN=CW_TRUE;
-			WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.phyStandardValue += PHY_STANDARD_N;
-		}
-		else
-			WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.phyStandardN=CW_FALSE;
-		
-		WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.numInterfaces=0;
-		
-		//Set all interface WTP_MAX_INTERFACES in STA mode
-		for(indexWlan=0; indexWlan < WTP_MAX_INTERFACES; indexWlan++)
-		{
-			WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.interfaces[indexWlan].typeInterface = CW_STA_MODE;
-			WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.interfaces[indexWlan].BSSID = NULL;
-			WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.interfaces[indexWlan].wlanID = CWIEEEBindingGetDevFromIndexID(indexWlan);
-			if ((joinRequest->frameTunnelMode)!= NULL)
-				WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.interfaces[indexWlan].frameTunnelMode=joinRequest->frameTunnelMode;
-			else 
-				WTPProtocolManager->radiosInfo.radiosInfo[i].gWTPPhyInfo.interfaces[indexWlan].frameTunnelMode=0;
-		}
-	}
 	CWDebugLog("Join Request Saved");
 	return CW_TRUE;
 }

@@ -135,43 +135,6 @@ CWBool CWAssembleConfigureRequest(CWProtocolMessage **messagesPtr,
 		return CW_FALSE;
 	} 
 	
-	//Elena Agostini - 07/2014: nl80211 support. 
-	int indexWTPRadioInfo=0, indexRates=0;;
-	for(indexWTPRadioInfo=0; indexWTPRadioInfo<gRadiosInfo.radioCount; indexWTPRadioInfo++)
-	{
-		if(
-		!(CWAssembleMsgElemWTPRadioInformation( &(msgElems[++k]), 
-											gRadiosInfo.radiosInfo[indexWTPRadioInfo].gWTPPhyInfo.radioID, 
-											gRadiosInfo.radiosInfo[indexWTPRadioInfo].gWTPPhyInfo.phyStandardValue)) ||
-		!(CWAssembleMsgElemMultiDomainCapability( &(msgElems[++k]),
-											gRadiosInfo.radiosInfo[indexWTPRadioInfo].gWTPPhyInfo.radioID, 
-											gRadiosInfo.radiosInfo[indexWTPRadioInfo].gWTPPhyInfo.phyFrequencyInfo.frequencyList[0].frequency, 
-											gRadiosInfo.radiosInfo[indexWTPRadioInfo].gWTPPhyInfo.phyFrequencyInfo.totChannels, 
-											gRadiosInfo.radiosInfo[indexWTPRadioInfo].gWTPPhyInfo.phyFrequencyInfo.frequencyList[0].maxTxPower)) ||
-		!(CWAssembleMsgElemMACOperation( &(msgElems[++k]),
-											gRadiosInfo.radiosInfo[indexWTPRadioInfo].gWTPPhyInfo.radioID, 
-											gRadiosInfo.radiosInfo[indexWTPRadioInfo].gWTPPhyInfo.fragmentationTreshold, 
-											gRadiosInfo.radiosInfo[indexWTPRadioInfo].gWTPPhyInfo.rtsThreshold,
-											gRadiosInfo.radiosInfo[indexWTPRadioInfo].gWTPPhyInfo.shortRetry,
-											gRadiosInfo.radiosInfo[indexWTPRadioInfo].gWTPPhyInfo.longRetry,
-											gRadiosInfo.radiosInfo[indexWTPRadioInfo].gWTPPhyInfo.txMSDU,
-											gRadiosInfo.radiosInfo[indexWTPRadioInfo].gWTPPhyInfo.rxMSDU)) ||
-		 !(CWAssembleMsgElemSupportedRates(&(msgElems[++k]), 
-											indexWTPRadioInfo, //gRadiosInfo.radiosInfo[indexWTPRadioInfo].gWTPPhyInfo.radioID,
-											gRadiosInfo.radiosInfo[indexWTPRadioInfo].gWTPPhyInfo.supportedRates,
-											CW_80211_MAX_SUPP_RATES
-											))
-											
-		)
-		{
-			int i;
-			for(i = 0; i <= k; i++) { CW_FREE_PROTOCOL_MESSAGE(msgElems[i]);}
-			CW_FREE_OBJECT(msgElems);
-			/* error will be handled by the caller */
-			return CW_FALSE;	
-		}
-	}
-	
 	if (!(CWAssembleMessage(messagesPtr, 
 				fragmentsNumPtr,
 				PMTU,
@@ -221,7 +184,6 @@ CWBool CWParseConfigureResponseMessage (char *msg,
 	valuesPtr->echoRequestTimer=0;
 	valuesPtr->radioOperationalInfoCount=0;
 	valuesPtr->radiosDecryptErrorPeriod.radiosCount=0;
-	valuesPtr->bindingValues = NULL;
 	valuesPtr->ACIPv4ListInfo.ACIPv4ListCount=0;
 	valuesPtr->ACIPv4ListInfo.ACIPv4List=NULL;
 	valuesPtr->ACIPv6ListInfo.ACIPv6ListCount=0;
@@ -338,14 +300,6 @@ CWBool CWParseConfigureResponseMessage (char *msg,
 		}
 	}
 	
-	if(bindingMsgElemFound){
-		if(!CWBindingParseConfigureResponse(msg+offsetTillMessages,
-						    len-offsetTillMessages,
-						    &(valuesPtr->bindingValues))) {
-			return CW_FALSE;
-		}	
-	}
-	
 	CWDebugLog("Configure Response Parsed");
 	return CW_TRUE;
 }
@@ -377,16 +331,6 @@ CWBool CWSaveConfigureResponseMessage(CWProtocolConfigureResponseValues *configu
 		(gACInfoPtr->ACIPv6ListInfo).ACIPv6List = (configureResponse->ACIPv6ListInfo).ACIPv6List;	
 	}
 
-	if(configureResponse->bindingValues != NULL) {
-
-		CWProtocolResultCode resultCode;
-
-		if(!CWBindingSaveConfigureResponse(configureResponse->bindingValues, &resultCode)) {
-
-			CW_FREE_OBJECT(configureResponse->bindingValues);	
-			return CW_FALSE;
-		}	
-	}
 
 	if(configureResponse->echoRequestTimer > 0) {
 		
@@ -415,7 +359,6 @@ CWBool CWSaveConfigureResponseMessage(CWProtocolConfigureResponseValues *configu
          */
         CW_FREE_OBJECT(configureResponse->radioOperationalInfo);
         CW_FREE_OBJECT(configureResponse->radiosDecryptErrorPeriod.radios);
-        CW_FREE_OBJECT(configureResponse->bindingValues);
 
 	CWDebugLog("Configure Response Saved");
 	return CW_TRUE;	

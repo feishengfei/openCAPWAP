@@ -63,7 +63,6 @@ CWBool CWWTPCheckForBindingFrame()
 						   &fragmentsNum, 
 						   gWTPPathMTU, 
 						   dataFirstElem->frame, 
-						   dataFirstElem->bindingValues,
  			       			   CW_PACKET_PLAIN
 						   ,0))			  
 			{	

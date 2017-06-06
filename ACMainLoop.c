@@ -71,7 +71,7 @@ void CWACSetNewGenericHandshakeDataThread(genericHandshakeThreadPtr * genericThr
 void CWACSetNewGenericHandshakeDataThread(genericHandshakeThreadPtr * genericThreadStruct, CWNetworkLev4Address * addrPtr, CWSocket sock, char * pData, int readBytes) {
 	/* Se nessuno sta gestendo l'handshake creo un nuovo thread generico */
 	
-	CW_CREATE_OBJECT_ERR((*genericThreadStruct), genericHandshakeThread, return NULL; );
+	CW_CREATE_OBJECT_ERR((*genericThreadStruct), genericHandshakeThread, return; );
 	
 	if(addrPtr == NULL) return;
 
@@ -186,7 +186,8 @@ void CWACManageIncomingPacket(CWSocket sock,
 	CWBool dataFlagTmp;
 	CWProtocolMessage msgDataChannel;
 	char *valSessionIDPtr=NULL;
-	int KeepAliveLenght=0, elemType, elemLen;
+	int KeepAliveLenght=0;
+	unsigned short int elemType, elemLen;
 	CWSecuritySession sessionDataGeneric;
 	int pathMTU, indexTmpThread=0;
 /*
@@ -306,7 +307,7 @@ void CWACManageIncomingPacket(CWSocket sock,
 			
 			if(!CWParseTransportHeader(&msgDataChannel, &values, &dataFlag, NULL)){
 				CWDebugLog("CWParseTransportHeader failed");
-				return CW_FALSE;
+				return;
 			}
 			
 			if(msgDataChannel.data_msgType == CW_DATA_MSG_KEEP_ALIVE_TYPE) {
@@ -392,7 +393,7 @@ void CWACManageIncomingPacket(CWSocket sock,
 			 * note: we can consider reassembling only changed part
 			 * AND/OR do this in a new thread.
 			 */
-			if(!CWErr(CWAssembleDiscoveryResponse(&msgPtr, seqNum, &(values.tmpPhyInfo)))) {
+			if(!CWErr(CWAssembleDiscoveryResponse(&msgPtr, seqNum))) {
 				/* 
 				 * note: maybe an out-of-memory memory error 
 				 * can be resolved without exit()-ing by 
@@ -649,8 +650,6 @@ CW_THREAD_RETURN_TYPE CWManageWTP(void *arg) {
 	
 	CWThreadMutexUnlock(&gActiveWTPsMutex);
 
-	CWACInitBinding(i);
-	
 	gWTPs[i].interfaceIndex = interfaceIndex;
 	gWTPs[i].socket = sock;
 	
@@ -670,7 +669,6 @@ CW_THREAD_RETURN_TYPE CWManageWTP(void *arg) {
 	CWCreateThreadCondition(&gWTPs[i].interfaceWait);
 	CWDestroyThreadCondition(&gWTPs[i].interfaceComplete);	
 	CWCreateThreadCondition(&gWTPs[i].interfaceComplete);
-	gWTPs[i].qosValues = NULL;
 	/**** ACInterface ****/
 
 	gWTPs[i].messages = NULL;
@@ -943,88 +941,6 @@ CW_THREAD_RETURN_TYPE CWManageWTP(void *arg) {
 			CWBool bResult = CW_FALSE;
 			
 			switch (gWTPs[i].interfaceCommand) {
-			case QOS_CMD:
-			  {
-				int seqNum = CWGetSeqNum();
-				
-				/* CWDebugLog("~~~~~~seq num in Check: %d~~~~~~", seqNum); */
-				if (CWAssembleConfigurationUpdateRequest(&(gWTPs[i].messages), 
-														 &(gWTPs[i].messagesCount),
-														 gWTPs[i].pathMTU,
-														 seqNum, CONFIG_UPDATE_REQ_QOS_ELEMENT_TYPE)) {
-				  
-				  if(CWACSendAcknowledgedPacket(i, CW_MSG_TYPE_VALUE_CONFIGURE_UPDATE_RESPONSE, seqNum)) 
-					bResult = CW_TRUE;
-				  else
-					CWACStopRetransmission(i);
-				}
-				break;
-			  }
-			  /*
-			   * Elena Agostini: 09/2014. IEEE WLAN Configuration Request
-			   */
-			 case IEEE_WLAN_CONFIGURATION_CMD:
-			 {
-				int seqNum = CWGetSeqNum();
-				
-				int radioIndex = CWIEEEBindingGetIndexFromDevID(gWTPs[i].cmdWLAN->radioID);					
-				int wlanIndex = CWIEEEBindingGetIndexFromDevID(gWTPs[i].cmdWLAN->wlanID);
-				
-				CWLog("Assembling WLAN Configuration Request (op. %d)", gWTPs[i].cmdWLAN->typeCmd);
-				
-				if(gWTPs[i].cmdWLAN->typeCmd == CW_OP_ADD_WLAN)
-				{
-					//Controlli su numero radio e numero interfaccia
-					if(!ACUpdateInfoWlanInterface(
-					&(gWTPs[i].WTPProtocolManager.radiosInfo.radiosInfo[radioIndex].gWTPPhyInfo.interfaces[wlanIndex]), 
-					gWTPs[i].cmdWLAN->wlanID, 
-					gWTPs[i].cmdWLAN->ssid, 
-					gWTPs[i].WTPProtocolManager.radiosInfo.radiosInfo[radioIndex].gWTPPhyInfo.interfaces[wlanIndex].frameTunnelMode))
-						break;//return CW_FALSE;
-				}
-				
-				//Create Configuration Request. Add or Del
-				if((CWAssembleIEEEConfigurationRequest(&(gWTPs[i].messages), 
-									 &(gWTPs[i].messagesCount), 
-									 gWTPs[i].pathMTU, 
-									 seqNum,
-									 gWTPs[i].cmdWLAN->typeCmd,
-									 gWTPs[i].cmdWLAN->radioID,
-									 gWTPs[i].cmdWLAN->wlanID,
-									 i
-									 )))  {
-						
-					/*	if(!CWACSendFragments(i)) 
-							CWLog("CWACSendFragments NO");
-						else
-							bResult = CW_TRUE;
-						*/
-						
-						if(CWACSendAcknowledgedPacket(i, CW_MSG_TYPE_VALUE_WLAN_CONFIGURATION_REQUEST, seqNum))
-							bResult = CW_TRUE;
-						 else
-							CWACStopRetransmission(i);
-					}	
-				
-				break;
-			
-			 }
-			case CLEAR_CONFIG_MSG_CMD:
-			  {
-				int seqNum = CWGetSeqNum();
-				
-						/* Clear Configuration Request */
-				if (CWAssembleClearConfigurationRequest(&(gWTPs[i].messages),
-														&(gWTPs[i].messagesCount),
-														gWTPs[i].pathMTU, seqNum)) {
-				  
-				  if(CWACSendAcknowledgedPacket(i, CW_MSG_TYPE_VALUE_CLEAR_CONFIGURATION_RESPONSE, seqNum)) 
-								bResult = CW_TRUE;
-				  else
-					CWACStopRetransmission(i);
-				}
-				break;
-			  }
 			/********************************************************
 			 * 2009 Update:											*
 			 *				New switch case for OFDM_CONTROL_CMD	*
@@ -1110,7 +1026,6 @@ void _CWCloseThread(int i) {
 			   CW_CRITICAL_TIMER_EXPIRED_SIGNAL);
 
 	/**** ACInterface ****/
-	gWTPs[i].qosValues=NULL;
 	CWThreadMutexUnlock(&(gWTPs[i].interfaceMutex));
 	/**** ACInterface ****/
 
@@ -1320,7 +1235,10 @@ CW_THREAD_RETURN_TYPE CWGenericWTPDataHandshake(void *arg) {
 	CWWTPManager *wtpPtr = NULL;
 	struct sockaddr_in *tmpAdd;
 	CWSecuritySession sessionDataGeneric;
-	int pathMTU, readBytes, countPacketDataList, dataFlag=1, elemLen, elemType, fragments, i;
+	unsigned short int elemLen, elemType;
+	int pathMTU, readBytes, countPacketDataList, fragments, i;
+	CWBool dataFlag = CW_TRUE;
+
 	char buf[CW_BUFFER_SIZE];
 	char * pData, * valSessionIDPtr;
 	CWProtocolMessage msg, msgDataChannel;
@@ -1395,7 +1313,6 @@ CW_THREAD_RETURN_TYPE CWGenericWTPDataHandshake(void *arg) {
 						  &fragmentsNum, 
 						  pathMTU, 
 						  &sessionIDmsgElem, 
-						  NULL,
 						  CW_PACKET_CRYPT,
 						  1
 						  ))

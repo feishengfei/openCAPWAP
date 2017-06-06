@@ -95,11 +95,11 @@ typedef struct {
 	WTPDecryptErrorReport radiosDecryptErrorPeriod;
 	int idleTimeout;
 	int fallback;
-	void * bindingValues;
+	//void * bindingValues;
 } CWProtocolConfigureResponseValues;
 
 typedef struct {
-	void * bindingValues;
+	//void * bindingValues;
 	/*Update 2009:
 		add new non-binding specific values*/
 	void * protocolValues;
@@ -152,9 +152,6 @@ CWBool CWParseWTPRadioInformation_FromAC(CWProtocolMessage *msgPtr, int len, cha
 CWBool CWParseACECNSupport(CWProtocolMessage *msgPtr, int len, int *valPtr);
 //Elena Agostini - 09/2014: IEEE Binding
 CWBool CWAssembleMsgElemAssignedWTPSSID(CWProtocolMessage *msgPtr, int radioID, int wlanID, char * bssid);
-CWBool CWParseACAddWlan(CWProtocolMessage *msgPtr, int len, ACInterfaceRequestInfo * valPtr);
-CWBool CWParseACDelWlan(CWProtocolMessage *msgPtr, int len, ACInterfaceRequestInfo * valPtr);
-CWBool CWParseACUpdateWlan(CWProtocolMessage *msgPtr, int len, ACInterfaceRequestInfo * valPtr);
 
 //si trova in CWProtocol.h
 //CWBool CWParseACName(CWProtocolMessage *msgPtr, int len, char **valPtr);						// 4

@@ -44,8 +44,6 @@
 #include <netpacket/packet.h>
 #include "CWWTP.h"
 #include "CWVendorPayloads.h"
-#include "common.h"
-#include "ieee802_11_defs.h"
 #ifdef DMALLOC
 #include "../dmalloc-5.5.0/dmalloc.h"
 #endif
@@ -99,7 +97,6 @@ CWBool CWAssembleStationConfigurationResponse(CWProtocolMessage **messagesPtr,
 					      CWProtocolResultCode resultCode);
 
 					      
-CWBool CWParseStationConfigurationRequest (char *msg, int len, int * BSSIndex, int * STAIndex, int * typeOp);
 
 void CWConfirmRunStateToACWithEchoRequest();
 void CWWTPKeepAliveDataTimerExpiredHandler(void *arg);
@@ -137,7 +134,7 @@ CW_THREAD_RETURN_TYPE CWWTPReceiveDtlsPacket(void *arg) {
 
 	int 			readBytes;
 	char 			buf[CW_BUFFER_SIZE];
-	CWSocket 		sockDTLS = (CWSocket)arg;
+	CWSocket 		sockDTLS = *(CWSocket *)(arg);
 	CWNetworkLev4Address	addr;
 	char* 			pData;
 	CWBool gWTPDataChannelLocalFlag=CW_FALSE, gWTPExitRunEchoLocal=CW_FALSE;
@@ -209,7 +206,7 @@ CW_THREAD_RETURN_TYPE CWWTPReceiveDataPacket(void *arg) {
 	int 			n,readBytes;
 	char 			buf[CW_BUFFER_SIZE];
 	struct sockaddr_ll 	rawSockaddr;	
-	CWSocket 		sockDTLS = (CWSocket)arg;
+	CWSocket 		sockDTLS = *(CWSocket *)(arg);
 	CWNetworkLev4Address	addr;
 	char* 			pData;
 	CWBool gWTPDataChannelLocalFlag=CW_FALSE, gWTPExitRunEchoLocal=CW_FALSE;
@@ -386,204 +383,9 @@ manager_data_failure:
 						break;
 					}
 				}else if (msgPtr.data_msgType == CW_IEEE_802_3_FRAME_TYPE) {
-
-					CWDebugLog("DATA Frame 802.3 (%d bytes) received from AC",msgPtr.offset);
-					
-					/*MAC - begin*/
-					rawSockaddr.sll_addr[0]  = msgPtr.msg[0];		
-					rawSockaddr.sll_addr[1]  = msgPtr.msg[1];		
-					rawSockaddr.sll_addr[2]  = msgPtr.msg[2];
-					rawSockaddr.sll_addr[3]  = msgPtr.msg[3];
-					rawSockaddr.sll_addr[4]  = msgPtr.msg[4];
-					rawSockaddr.sll_addr[5]  = msgPtr.msg[5];
-					/*MAC - end*/
-					rawSockaddr.sll_addr[6]  = 0x00;/*not used*/
-					rawSockaddr.sll_addr[7]  = 0x00;/*not used*/
-					
-					rawSockaddr.sll_hatype   = htons(msgPtr.msg[12]<<8 | msgPtr.msg[13]);
-					
-					struct sockaddr_ll addr;
-					int gRawSockLocal;
-					
-					if ((gRawSockLocal=socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL)))<0) 	{
-						CWDebugLog("THR FRAME: Error creating socket");
-						CWExitThread();
-					}
-
-					memset(&addr, 0, sizeof(addr));
-					addr.sll_family = AF_PACKET;
-				//	addr.sll_protocol = htons(ETH_P_ALL);
-				//	addr.sll_pkttype = PACKET_HOST;
-					addr.sll_ifindex = if_nametoindex("monitor0"); //if_nametoindex(gRadioInterfaceName_0);
-				 
-					 
-					if ((bind(gRawSockLocal, (struct sockaddr*)&addr, sizeof(addr)))<0) {
-						CWDebugLog("THR FRAME: Error binding socket");
-						CWExitThread();
-					}
-				 
-					n = sendto(gRawSockLocal,msgPtr.msg ,msgPtr.offset,0,(struct sockaddr*)&rawSockaddr, sizeof(rawSockaddr));
-					
+					CWDebugLog("DATA Frame 802.3 (%d bytes) received from AC (TODO)",msgPtr.offset);
 				}else if(msgPtr.data_msgType == CW_IEEE_802_11_FRAME_TYPE) {
-				
-#ifdef SPLIT_MAC
-					int offsetFrameReceived;
-					short int frameControl;
-					char * frameResponse=NULL;
-					u64 cookie_out;
-					
-					if(!CW80211ParseFrameIEControl(msgPtr.msg, &(offsetFrameReceived), &(frameControl)))
-						return NULL;
-					
-					if( WLAN_FC_GET_TYPE(frameControl) == WLAN_FC_TYPE_DATA ){
-						unsigned char buffer[CW_BUFFER_SIZE];
-						unsigned char buf80211[CW_BUFFER_SIZE];
-						unsigned char staAddr[ETH_ALEN];
-						struct ieee80211_radiotap_header * radiotapHeader;
-						int frameRespLen=0;
-						struct CWFrameDataHdr dataFrame;
-						int tmpOffset;
-						struct ifreq ethreq;
-						WTPSTAInfo * thisSTA;
-						int offsetFrameReceived;
-						int indexBSS;
-						
-							if(rawInjectSocket < 0)
-							{
-								CWLog("ERROR INJECT SOCKET. You must restart WTP");
-								return CW_FALSE;
-							}
-
-							if(!CW80211ParseDataFrameFromDS(msgPtr.msg, &(dataFrame)))
-							{
-								CWLog("CW80211: Error parsing data frame");
-								return CW_FALSE;
-							}
-						/*	CWLog("*** Ricevuto Data Frame da AC ***");
-							CWLog("FrameControl: %02x", dataFrame.frameControl);
-							CWLog("DA: %02x: --- :%02x: --", (int) dataFrame.DA[0], (int) dataFrame.DA[4]);
-							CWLog("SA: %02x: --- :%02x: --", (int) dataFrame.SA[0], (int) dataFrame.SA[4]);
-							CWLog("BSSID: %02x: --- :%02x: --", (int) dataFrame.BSSID[0], (int) dataFrame.BSSID[4]);
-							*/
-							if(checkAddressBroadcast(dataFrame.DA))
-							{
-						//		CWLog("Broadcast destination");
-								CWInjectFrameMonitor(rawInjectSocket, msgPtr.msg, msgPtr.offset, 0, 0);
-							}
-							else
-							{
-								nodeAVL *tmpNodeSta=NULL;
-								//---- Search AVL node
-								CWThreadMutexLock(&mutexAvlTree);
-								tmpNodeSta = AVLfind(dataFrame.DA, avlTree);
-								//AVLdisplay_avl(avlTree);
-								CWThreadMutexUnlock(&mutexAvlTree);
-								if(tmpNodeSta == NULL)
-									CWPrintEthernetAddress(dataFrame.DA, "Destination STA not associated. Ignored");
-								else
-								{
-									//NB. Controllo anche il BSSID?
-						//			CWLog("STA trovata [%02x:%02x:%02x:%02x:%02x:%02x] destinataria.", (int) tmpNodeSta->staAddr[0], (int) tmpNodeSta->staAddr[1], (int) tmpNodeSta->staAddr[2], (int) tmpNodeSta->staAddr[3], (int) tmpNodeSta->staAddr[4], (int) tmpNodeSta->staAddr[5]);
-									CWInjectFrameMonitor(rawInjectSocket, msgPtr.msg, msgPtr.offset, 0, 0);
-								}
-								//----
-							}
-					}
-					
-					if(WLAN_FC_GET_STYPE(frameControl) == WLAN_FC_STYPE_AUTH)
-					{
-						CWLog("Received From AC Authentication Response");
-						
-						struct CWFrameAuthResponse authResponse;
-						if(!CW80211ParseAuthResponse(msgPtr.msg, &authResponse))
-						{
-							CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL);
-							return NULL;
-						}
-						
-						int radioIndex = 0, wlanIndex = 0, BSSIndex=0, trovato=0; 
-						for(radioIndex=0; radioIndex<WTP_RADIO_MAX; radioIndex++)
-						{
-							for(wlanIndex=0; wlanIndex<WTP_MAX_INTERFACES; wlanIndex++)
-							{
-								BSSIndex=getBSSIndex(radioIndex, wlanIndex);
-								if(
-									(WTPGlobalBSSList[BSSIndex]->interfaceInfo->BSSID != NULL) && 
-									(!strcmp(WTPGlobalBSSList[BSSIndex]->interfaceInfo->BSSID, authResponse.BSSID))
-								)
-								{
-									trovato=1;
-									break;
-								}
-							}
-							
-							if(trovato == 1)
-								break;
-						}
-						
-						if(trovato == 1)
-						{
-							if(!CW80211SendFrame(WTPGlobalBSSList[BSSIndex], 0, CW_FALSE, msgPtr.msg, MGMT_FRAME_FIXED_LEN_AUTH, &(cookie_out), 1,1))
-									CWLog("NL80211: Errore CW80211SendFrame");
-
-							WTPSTAInfo * thisSTA = findSTABySA(WTPGlobalBSSList[BSSIndex], authResponse.DA);
-							if(!CWStartAssociationRequestTimer(thisSTA, WTPGlobalBSSList[BSSIndex]))
-									CWLog("[CW80211] Problem starting timer association request");
-						}			
-					}
-					
-					if(WLAN_FC_GET_STYPE(frameControl) == WLAN_FC_STYPE_ASSOC_RESP)
-					{
-						CWLog("Received from AC Association Response");
-						
-						struct CWFrameAssociationResponse assResponse;
-						if(!CW80211ParseAssociationResponse(msgPtr.msg, &assResponse))
-						{
-							CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL);
-							return NULL;
-						}
-						int radioIndex = 0, wlanIndex = 0, BSSIndex=0, trovato=0; 
-						for(radioIndex=0; radioIndex<WTP_RADIO_MAX; radioIndex++)
-						{
-							for(wlanIndex=0; wlanIndex<WTP_MAX_INTERFACES; wlanIndex++)
-							{
-								BSSIndex=getBSSIndex(radioIndex, wlanIndex);
-								if(
-									WTPGlobalBSSList[BSSIndex] &&
-									(WTPGlobalBSSList[BSSIndex]->interfaceInfo) &&
-									(WTPGlobalBSSList[BSSIndex]->interfaceInfo->BSSID != NULL) && 
-									(!strcmp(WTPGlobalBSSList[BSSIndex]->interfaceInfo->BSSID, assResponse.BSSID))
-								)
-								{
-									trovato=1;
-									break;
-								}
-							}
-							
-							if(trovato == 1)
-								break;
-						}
-						//Ok o ricalcolo?
-						int lenFrame = MGMT_FRAME_FIXED_LEN_ASSOCIATION+MGMT_FRAME_IE_FIXED_LEN+CW_80211_MAX_SUPP_RATES;
-						if(trovato == 1)
-							if(!CW80211SendFrame(WTPGlobalBSSList[BSSIndex], 0, CW_FALSE, msgPtr.msg, lenFrame, &(cookie_out), 1,1))
-									CWLog("NL80211: Errore CW80211SendFrame");
-					}
-#else
-					struct ieee80211_hdr *hdr;
-                    u16 fc;
-                    hdr = (struct ieee80211_hdr *) msgPtr.msg;
-                    fc = le_to_host16(hdr->frame_control);
-       
-                   if( WLAN_FC_GET_TYPE(fc) == WLAN_FC_TYPE_DATA ){
-						CWLog("Got 802.11 Data Packet (stype=%d) from AC(hostapd) len:%d",WLAN_FC_GET_STYPE(fc),msgPtr.offset);
-						//CWWTPSendFrame(msgPtr.msg, msgPtr.offset);
-                         
-                   }
-                   else{
-                        CWLog("Control/Unknow Type type=%d",WLAN_FC_GET_TYPE(fc));
-                    }
-#endif
+					CWDebugLog("DATA Frame 802.11 (%d bytes) received from AC (TODO)",msgPtr.offset);
 				}else{
 					CWLog("Unknow Data Msg Type");
 				}
@@ -629,7 +431,7 @@ CWStateTransition CWWTPEnterRun() {
 	CWThread thread_manageDataPacket;
 	if(!CWErr(CWCreateThread(&thread_manageDataPacket, 
 				 CWWTPManageDataPacket,
-				 (void*)gWTPDataSocket))) {
+				 (void*)&gWTPDataSocket))) {
 		
 		CWLog("Error starting Thread that receive DTLS DATA packet");
 		CWNetworkCloseSocket(gWTPDataSocket);
@@ -884,6 +686,7 @@ CWBool CWWTPManageGenericRunMessage(CWProtocolMessage *msgPtr) {
 
 			case CW_MSG_TYPE_VALUE_CLEAR_CONFIGURATION_REQUEST:
 			{
+				CWLog("Clear Configuration Request received");
 				CWProtocolResultCode resultCode = CW_PROTOCOL_FAILURE;
 				/*Update 2009:
 					check to see if a time-out on session occur...
@@ -893,7 +696,6 @@ CWBool CWWTPManageGenericRunMessage(CWProtocolMessage *msgPtr) {
 					CW_FREE_OBJECT(messages);
 					return CW_FALSE;
 				}
-				CWLog("Clear Configuration Request received");
 				/*WTP RESET ITS CONFIGURAION TO MANUFACTURING DEFAULT}*/
 				if(!CWSaveClearConfigurationRequest(&resultCode))
 					return CW_FALSE;
@@ -925,93 +727,26 @@ CWBool CWWTPManageGenericRunMessage(CWProtocolMessage *msgPtr) {
 				}
 				CWLog("# _______ Station Configuration Request received _______ #");
 				int typeOp=-1;
+#if 0
 				if(CWParseStationConfigurationRequest((msgPtr->msg)+(msgPtr->offset), len, &BSSIndex, &STAIndex, &typeOp))
 				{
 					if(typeOp == CW_MSG_ELEMENT_ADD_STATION_CW_TYPE)
 					{
 						CWLog("[CW80211] REQUEST Add Station");
-						if(!CWWTPAddNewStation(BSSIndex, STAIndex))
-							resultCode=CW_PROTOCOL_FAILURE;
 					}
 					
 					if(typeOp == CW_MSG_ELEMENT_DELETE_STATION_CW_TYPE)
 					{
 						CWLog("[CW80211] REQUEST Delete Station");
-						if(!CWWTPDelStation(WTPGlobalBSSList[BSSIndex], &(WTPGlobalBSSList[BSSIndex]->staList[STAIndex])))
-							resultCode=CW_PROTOCOL_FAILURE;
 					}
 				}
 				else
 					resultCode=CW_PROTOCOL_FAILURE;
+#endif
 				
 				if(!CWAssembleStationConfigurationResponse(&messages, &fragmentsNum, gWTPPathMTU, controlVal.seqNum, resultCode)) 
 					return CW_FALSE;
 
-				toSend=CW_TRUE;
-				break;
-			}
-			/*
-			 * Elena Agostini: 09/2014. IEEE WLAN Configuration Request
-			 */
-			case CW_MSG_TYPE_VALUE_WLAN_CONFIGURATION_REQUEST:
-			{
-				CWProtocolResultCode resultCode = CW_PROTOCOL_FAILURE;
-				ACInterfaceRequestInfo interfaceACInfo;
-				int radioIDsend, wlanIDsend;
-				int radioIDindex, wlanIDindex;
-				char * bssidAssigned=NULL;
-				
-				if (!CWResetEchoRequestRetransmit()) {
-					CWFreeMessageFragments(messages, fragmentsNum);
-					CW_FREE_OBJECT(messages);
-					return CW_FALSE;
-				}
-				
-				CWLog("");
-				CWLog("# _______ WLAN Configuration Request received _______ #");
-				
-				if(!(CWParseIEEEConfigurationRequestMessage(msgPtr->msg, len+(msgPtr->offset), controlVal.seqNum, &(interfaceACInfo)))) 
-				{
-					if(CWErrorGetLastErrorCode() != CW_ERROR_INVALID_FORMAT) {
-						CWLog("Failure Parsing Response");
-						resultCode = CW_PROTOCOL_FAILURE_UNRECOGNIZED_MSG_ELEM;
-						
-						return CW_FALSE;
-					}
-					else {
-						CWErrorHandleLast();
-					}
-					return CW_FALSE;
-				}
-				
-				radioIDsend = interfaceACInfo.radioID;
-				wlanIDsend = interfaceACInfo.wlanID;
-				
-				radioIDindex = CWIEEEBindingGetIndexFromDevID(interfaceACInfo.radioID);
-				wlanIDindex = CWIEEEBindingGetIndexFromDevID(interfaceACInfo.wlanID);
-				
-				if((CWSaveIEEEConfigurationRequestMessage(&(interfaceACInfo)))) {
-					resultCode = CW_PROTOCOL_SUCCESS;
-					
-					if(interfaceACInfo.operation == CW_OP_ADD_WLAN)
-					{
-						if(
-							(wlanIDindex < WTP_MAX_INTERFACES) &&
-							(radioIDindex < WTP_RADIO_MAX)
-						)
-						{
-							CW_CREATE_ARRAY_CALLOC_ERR(bssidAssigned, ETH_ALEN+1, char, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-							CW_COPY_MEMORY(bssidAssigned, gRadiosInfo.radiosInfo[radioIDindex].gWTPPhyInfo.interfaces[wlanIDindex].BSSID, ETH_ALEN);
-						}
-					}
-				}
-				
-				if(!(CWAssembleIEEEConfigurationResponse(&messages, &fragmentsNum, gWTPPathMTU, controlVal.seqNum,
-														resultCode, radioIDsend, wlanIDsend, bssidAssigned)
-					)) {
-					return CW_FALSE;
-				}
-				
 				toSend=CW_TRUE;
 				break;
 			}
@@ -1339,7 +1074,6 @@ void CWWTPKeepAliveDataTimerExpiredHandler(void *arg) {
 			    &fragmentsNum, 
 			    gWTPPathMTU, 
 			    &sessionIDmsgElem, 
-			    NULL,
 			    CW_PACKET_PLAIN,
 			    1
 			    ))
@@ -1823,15 +1557,6 @@ CWBool CWAssembleConfigurationUpdateResponse(CWProtocolMessage **messagesPtr,
 	
 	if (protoValues)  {
 		switch (protoValues->vendorPayloadType) {
-			case CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_UCI:
-			case CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_WUM:
-					if (!(CWAssembleVendorMsgElemResultCodeWithPayload(msgElems,resultCode, protoValues))) {
-						CW_FREE_OBJECT(msgElems);
-						return CW_FALSE;
-					}
-
-			break;
-
 			default:
 				/*Result Code only*/
 				if (!(CWAssembleMsgElemResultCode(msgElems,resultCode))) {
@@ -1951,95 +1676,6 @@ CWBool CWAssembleStationConfigurationResponse(CWProtocolMessage **messagesPtr, i
 }
 
 
-/*_______________________________________________________________*/
-/*  *******************___PARSE FUNCTIONS___*******************  */
-/*Update 2009:
-	Function that parses vendor payload,
-	filling in valuesPtr*/
-CWBool CWParseVendorMessage(char *msg, int len, void **valuesPtr) {
-	int i;
-	CWProtocolMessage completeMsg;
-	unsigned short int GlobalElemType=0;// = CWProtocolRetrieve32(&completeMsg);
-
-	if(msg == NULL || valuesPtr == NULL) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
-	
-	CWLog("Parsing Vendor Specific Message...");
-	
-	completeMsg.msg = msg;
-	completeMsg.offset = 0;
-
-	CWProtocolVendorSpecificValues *vendPtr;
-  
-
-	// parse message elements
-	while(completeMsg.offset < len) {
-	  unsigned short int elemType=0;// = CWProtocolRetrieve32(&completeMsg);
-	  unsigned short int elemLen=0;// = CWProtocolRetrieve16(&completeMsg);
-		
-		CWParseFormatMsgElem(&completeMsg,&elemType,&elemLen);		
-
-		GlobalElemType = elemType;
-
-		//CWDebugLog("Parsing Message Element: %u, elemLen: %u", elemType, elemLen);
-		
-		switch(elemType) {
-			case CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_CW_TYPE:
-			  completeMsg.offset += elemLen;
-			  break;
-		default:
-				if(elemType == CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_CW_TYPE) 
-				{
-					CW_FREE_OBJECT(valuesPtr);
-					return CWErrorRaise(CW_ERROR_INVALID_FORMAT, "Unrecognized Message Element");
-				}
-				else 
-				{
-					completeMsg.offset += elemLen;
-					break;
-				}
-		}
-	}
-
-	if(completeMsg.offset != len) return CWErrorRaise(CW_ERROR_INVALID_FORMAT, "Garbage at the End of the Message");
-
-
-	switch(GlobalElemType) {
-		case CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_CW_TYPE:
-			CW_CREATE_OBJECT_ERR(vendPtr, CWProtocolVendorSpecificValues, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-			/*Allocate various other vendor specific fields*/
-		break;
-	}
-
-	i=0;
-	completeMsg.offset = 0;
-	while(completeMsg.offset < len) {
-		unsigned short int type=0;
-		unsigned short int elemLen=0;
-		
-		CWParseFormatMsgElem(&completeMsg,&type,&elemLen);		
-
-		switch(type) {
-			/*Once we know it is a vendor specific payload...*/
-			case CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_CW_TYPE:
-				{
-					if (!(CWParseVendorPayload(&completeMsg, elemLen, (CWProtocolVendorSpecificValues *) vendPtr)))
-					{
-						CW_FREE_OBJECT(vendPtr);
-						return CW_FALSE; // will be handled by the caller
-					}
-				}
-				break;
-			default:
-				completeMsg.offset += elemLen;
-			break;
-		}
-	}
-	
-	*valuesPtr = (void *) vendPtr;
-	CWLog("Vendor Message Parsed");
-	
-	return CW_TRUE;
-}
 
 
 CWBool CWParseConfigurationUpdateRequest (char *msg,
@@ -2060,7 +1696,6 @@ CWBool CWParseConfigurationUpdateRequest (char *msg,
 	completeMsg.msg = msg;
 	completeMsg.offset = 0;
 
-	valuesPtr->bindingValues = NULL;
 	/*Update 2009:
 		added protocolValues (non-binding)*/
 	valuesPtr->protocolValues = NULL;
@@ -2083,169 +1718,12 @@ CWBool CWParseConfigurationUpdateRequest (char *msg,
 			completeMsg.offset += elemLen;
 			continue;	
 		}						
-		switch(elemType) {
-			/*Update 2009:
-				Added case for vendor specific payload
-				(Used mainly to parse UCI messages)...*/
-			case CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_CW_TYPE:
-				vendorMsgElemFound=CW_TRUE;
-				completeMsg.offset += elemLen;
-				break;
-			default:
-				return CWErrorRaise(CW_ERROR_INVALID_FORMAT, "Unrecognized Message Element");
-		}
 	}
 
 	if (completeMsg.offset != len) 
 		return CWErrorRaise(CW_ERROR_INVALID_FORMAT, "Garbage at the End of the Message");
 
-	/*Update 2009:
-		deal with vendor specific messages*/
-	if (vendorMsgElemFound) {
-		/* For the knownledge of SaveConfiguration */
-	  	*updateRequestType = GlobalElementType;
-
-		if (!(CWParseVendorMessage(msg, len, &(valuesPtr->protocolValues))))
-			return CW_FALSE;
-	}
-	
-	if (bindingMsgElemFound) {
-	  /* For the knownledge of SaveConfiguration */
-	  *updateRequestType = GlobalElementType;
-
-		if (!(CWBindingParseConfigurationUpdateRequest(msg, len, &(valuesPtr->bindingValues))))
-			return CW_FALSE;
-	}
-
 	CWLog("Configure Update Request Parsed");
-	
-	return CW_TRUE;
-}
-
-
-
-CWBool CWParseStationConfigurationRequest(char *msg, int len, int * BSSIndex, int * STAIndex, int * typeOp) 
-{
-	int radioID, wlanID, supportedRatesLen;
-	unsigned char * address;
-	short int assID, capability;
-	char flags;
-	unsigned char * supportedRates;
-	
-	//CWBool bindingMsgElemFound=CW_FALSE;
-	CWProtocolMessage completeMsg;
-	
-	if(msg == NULL) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
-	
-	CWLog("Parsing Station Configuration Request...");
-	
-	completeMsg.msg = msg;
-	completeMsg.offset = 0;
-
-	//valuesPtr->bindingValues = NULL;
-
-	// parse message elements
-	while(completeMsg.offset < len) {
-		unsigned short int elemType = 0;
-		unsigned short int elemLen = 0;
-		
-		CWParseFormatMsgElem(&completeMsg,&elemType,&elemLen);		
-
-		//CWDebugLog("Parsing Message Element: %u, elemLen: %u", elemType, elemLen);
-
-		/*if(CWBindingCheckType(elemType))
-		{
-			bindingMsgElemFound=CW_TRUE;
-			completeMsg.offset += elemLen;
-			continue;	
-		}*/
-							
-		switch(elemType) {
-			case CW_MSG_ELEMENT_ADD_STATION_CW_TYPE:
-				*(typeOp) = CW_MSG_ELEMENT_ADD_STATION_CW_TYPE;
-				if (!(CWParseAddStation(&completeMsg,  elemLen, &(radioID), &(address))))
-					return CW_FALSE;
-				break;
-			case CW_MSG_ELEMENT_IEEE80211_STATION:
-				if (!(CWParse80211Station(&completeMsg,  elemLen, &(radioID), &(assID), &(flags), &(address), &(capability), &(wlanID),  &(supportedRatesLen), &(supportedRates))))
-					return CW_FALSE;
-				break;
-				
-			case CW_MSG_ELEMENT_DELETE_STATION_CW_TYPE:
-				*(typeOp) = CW_MSG_ELEMENT_DELETE_STATION_CW_TYPE;
-				if (!(CWParseDeleteStation(&completeMsg,  elemLen, &(radioID), &(address))))
-					return CW_FALSE;
-				break;
-			default:
-				return CWErrorRaise(CW_ERROR_INVALID_FORMAT, "Unrecognized Message Element");
-		}
-	}
-	
-	if(completeMsg.offset != len) return CWErrorRaise(CW_ERROR_INVALID_FORMAT, "Garbage at the End of the Message");
-	/*
-	if(bindingMsgElemFound)
-		if(!(CWBindingParseConfigurationUpdateRequest (msg, len, &(valuesPtr->bindingValues))))
-			return CW_FALSE;
-	*/
-	
-	//Add function for delete station
-	
-	//Ricavo indici di BSS e STA
-	int radioIndex = radioID; //CWIEEEBindingGetIndexFromDevID(radioID);
-	if(radioIndex < 0)
-		return CW_FALSE;
-		
-	int wlanIndex = wlanID; //CWIEEEBindingGetIndexFromDevID(wlanID);
-	if(wlanIndex < 0)
-		return CW_FALSE;
-	
-	int trovato=0;
-	(*BSSIndex) = getBSSIndex(radioIndex, wlanIndex);
-	
-	CWPrintEthernetAddress(address, "Searching for STA");
-	
-	for((*STAIndex)=0; (*STAIndex) < WTP_MAX_STA; (*STAIndex)++)
-	{
-		if(
-			(WTPGlobalBSSList[(*BSSIndex)] != NULL) &&
-			(WTPGlobalBSSList[(*BSSIndex)]->staList[(*STAIndex)].address != NULL) && 
-			CWCompareEthernetAddress(WTPGlobalBSSList[(*BSSIndex)]->staList[(*STAIndex)].address, address) == 0
-		)
-		{
-			trovato=1;
-			break;
-		}
-	}
-	
-	if(trovato == 0)
-		return CW_FALSE;
-
-#ifdef SPLIT_MAC
-	/*
-	 * In caso di split mac riassegno alla STA i valori che l'AC mi invia.
-	 * In caso di Local MAC per ora  non faccio nulla, i valori li ha gia decisi in precedenza il WTP
-	 */
-	if(*(typeOp) == CW_MSG_ELEMENT_ADD_STATION_CW_TYPE)
-	{
-		WTPGlobalBSSList[(*BSSIndex)]->staList[(*STAIndex)].staAID=assID;
-		WTPGlobalBSSList[(*BSSIndex)]->staList[(*STAIndex)].flags=flags;
-		WTPGlobalBSSList[(*BSSIndex)]->staList[(*STAIndex)].capabilityBit=capability;
-		WTPGlobalBSSList[(*BSSIndex)]->staList[(*STAIndex)].lenSupportedRates=supportedRatesLen;
-		 
-		CW_CREATE_ARRAY_CALLOC_ERR(WTPGlobalBSSList[(*BSSIndex)]->staList[(*STAIndex)].supportedRates, supportedRatesLen+1, char, {CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL); return CW_FALSE;});
-		CW_COPY_MEMORY(WTPGlobalBSSList[(*BSSIndex)]->staList[(*STAIndex)].supportedRates, supportedRates, supportedRatesLen);
-		
-		CW_CREATE_ARRAY_CALLOC_ERR(WTPGlobalBSSList[(*BSSIndex)]->staList[(*STAIndex)].phyMbpsSet, supportedRatesLen+1, float, {CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL); return CW_FALSE;});
-		//not working? mbps is always 0
-		int indexRates=0;
-		for(indexRates=0; indexRates <= supportedRatesLen; indexRates++)
-		{
-			WTPGlobalBSSList[(*BSSIndex)]->staList[(*STAIndex)].phyMbpsSet[indexRates] = mapSupportedRatesValues(WTPGlobalBSSList[(*BSSIndex)]->staList[(*STAIndex)].supportedRates[indexRates], CW_80211_SUPP_RATES_CONVERT_FRAME_TO_VALUE);
-		}
-	}
-#endif
-	
-	CWLog("Station Configuration Request Parsed");
 	
 	return CW_TRUE;
 }
@@ -2296,39 +1774,6 @@ CWBool CWSaveWTPEventResponseMessage (void *WTPEventResp) {
 	return CW_TRUE;
 }
 
-/*Update 2009:
-	Save a vendor message (mainly UCI configuration messages)*/
-CWBool CWSaveVendorMessage(void* protocolValuesPtr, CWProtocolResultCode* resultCode) {
-	if(protocolValuesPtr==NULL) {return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);}
-	*resultCode = CW_PROTOCOL_SUCCESS;
-
-	CWProtocolVendorSpecificValues* vendorPtr=(CWProtocolVendorSpecificValues *)protocolValuesPtr; 
-
-	/*Find out which custom vendor paylod really is...*/
-	switch(vendorPtr->vendorPayloadType) {
-		case CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_UCI:
-			if(!CWWTPSaveUCIValues((CWVendorUciValues *)(vendorPtr->payload), resultCode))
-			{
-				CW_FREE_OBJECT(((CWVendorUciValues *)vendorPtr->payload)->commandArgs);
-				CW_FREE_OBJECT(vendorPtr->payload);
-				CW_FREE_OBJECT(vendorPtr);
-				return CW_FALSE;
-			}
-		break;
-
-		case CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_WUM:
-			if(!CWWTPSaveWUMValues((CWVendorWumValues *)(vendorPtr->payload), resultCode))
-			{
-				CW_FREE_OBJECT(vendorPtr->payload);
-				CW_FREE_OBJECT(vendorPtr);
-				return CW_FALSE;
-			}
-		break;
-	}
-
-	return CW_TRUE;
-}
-
 CWBool CWSaveConfigurationUpdateRequest(CWProtocolConfigurationUpdateRequestValues *valuesPtr,
 										CWProtocolResultCode* resultCode,
 										int *updateRequestType) {
@@ -2337,18 +1782,6 @@ CWBool CWSaveConfigurationUpdateRequest(CWProtocolConfigurationUpdateRequestValu
 
 	if(valuesPtr==NULL) {return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);}
 
-	if (valuesPtr->bindingValues!=NULL) {
-
-	  if(!CWBindingSaveConfigurationUpdateRequest(valuesPtr->bindingValues, resultCode, updateRequestType)) 
-			return CW_FALSE;
-	} 
-	if (valuesPtr->protocolValues!=NULL) {
-		/*Update 2009:
-			We have a msg which is not a 
-			binding specific message... */
-	  if(!CWSaveVendorMessage(valuesPtr->protocolValues, resultCode)) 
-			return CW_FALSE;
-	}
 	return CW_TRUE;
 }
 

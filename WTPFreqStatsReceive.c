@@ -45,7 +45,6 @@ CW_THREAD_RETURN_TYPE CWWTPReceiveFreqStats(void *arg)
 	
 	CWProtocolMessage *completeMsgPtr = NULL;
 	CWProtocolMessage *data = NULL;
-	CWBindingTransportHeaderValues *bindingValuesPtr = NULL;
 	
 	CWThreadSetSignals(SIG_BLOCK, 1, SIGALRM);
 	
@@ -100,15 +99,9 @@ CW_THREAD_RETURN_TYPE CWWTPReceiveFreqStats(void *arg)
 			 * For others Info: see  CWBinding.c                          *
 			 **************************************************************/
 			
-			
-			/* In this function is tied the name of the socket: recSock */
-			CW_CREATE_OBJECT_ERR(bindingValuesPtr, CWBindingTransportHeaderValues, EXIT_THREAD);
-			bindingValuesPtr->dataRate = -1;
-			bindingValuesPtr->SNR = 1;
-			
 			/* Capwap Message Assembling */
 						
-			if ( CWAssembleDataMessage(&completeMsgPtr, &fragmentsNum, gWTPPathMTU, data, bindingValuesPtr,
+			if ( CWAssembleDataMessage(&completeMsgPtr, &fragmentsNum, gWTPPathMTU, data,
 #ifdef CW_NO_DTLS
 									  CW_PACKET_PLAIN
 #else			       
@@ -138,7 +131,6 @@ CW_THREAD_RETURN_TYPE CWWTPReceiveFreqStats(void *arg)
 			CW_FREE_OBJECT(completeMsgPtr);
 			CW_FREE_PROTOCOL_MESSAGE(*data);
 			CW_FREE_OBJECT(data);
-			CW_FREE_OBJECT(bindingValuesPtr);				
 		}
 		else {
 			CWDebugLog("Thread Frequency Receive Stats: Error on recvfrom");

@@ -181,9 +181,7 @@ CWStateTransition CWWTPEnterJoin() {
 #endif
 
 	CWThread thread_receiveFrame;
-	if(!CWErr(CWCreateThread(&thread_receiveFrame, 
-				 CWWTPReceiveDtlsPacket,
-				 (void*)gWTPSocket))) {
+	if(!CWErr(CWCreateThread(&thread_receiveFrame,CWWTPReceiveDtlsPacket,(void*)(&gWTPSocket)))) {
 		
 		CWLog("Error starting Thread that receive DTLS packet");
 		timer_rem(waitJoinTimer, NULL);
@@ -199,7 +197,7 @@ CWStateTransition CWWTPEnterJoin() {
 	CWThread thread_receiveDataFrame;
 	if(!CWErr(CWCreateThread(&thread_receiveDataFrame, 
 				 CWWTPReceiveDataPacket,
-				 (void*)gWTPDataSocket))) {
+				 (void*)&gWTPDataSocket))) {
 		
 		CWLog("Error starting Thread that receive data packet");
 		return CW_ENTER_DISCOVERY;
@@ -310,20 +308,6 @@ CWBool CWAssembleJoinRequest(CWProtocolMessage **messagesPtr,
 		CW_FREE_OBJECT(msgElems);
 		/* error will be handled by the caller */
 		return CW_FALSE;
-	}
-	
-	//Elena Agostini - 07/2014: nl80211 support. 
-	int indexWTPRadioInfo=0;
-	for(indexWTPRadioInfo=0; indexWTPRadioInfo<gRadiosInfo.radioCount; indexWTPRadioInfo++)
-	{
-		if(!(CWAssembleMsgElemWTPRadioInformation( &(msgElems[++k]), gRadiosInfo.radiosInfo[indexWTPRadioInfo].gWTPPhyInfo.radioID, gRadiosInfo.radiosInfo[indexWTPRadioInfo].gWTPPhyInfo.phyStandardValue)))
-		{
-			int i;
-			for(i = 0; i <= k; i++) { CW_FREE_PROTOCOL_MESSAGE(msgElems[i]);}
-			CW_FREE_OBJECT(msgElems);
-			/* error will be handled by the caller */
-			return CW_FALSE;	
-		}
 	}
 	
 	return CWAssembleMessage(messagesPtr,

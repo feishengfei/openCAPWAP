@@ -37,6 +37,7 @@
 
 
 #include "CWWTP.h"
+#include "WTPProtocol_User.h"
 
 #define MAC_ADDR_LEN		6
 

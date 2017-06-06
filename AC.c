@@ -39,7 +39,6 @@
  
 #include "CWAC.h"
 #include "CWCommon.h"
-#include "tap.h"
 
 #ifdef DMALLOC
 #include "../dmalloc-5.5.0/dmalloc.h"
@@ -127,7 +126,6 @@ int main (int argc, const char * argv[]) {
 	/* Daemon mode */
 	
 	if (argc <= 1)
-		printf("Usage: AC working_path\n");
 		printf("Usage: AC working_path(where settings.ac.txt & config.ac exist)\n");
 
 	gEnabledLog = 1;

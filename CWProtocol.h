@@ -413,7 +413,7 @@ typedef struct {
 	int fragmentID;
 	int fragmentOffset;
 	int keepAlive;
-	CWBindingTransportHeaderValues *bindingValuesPtr;
+	//CWBindingTransportHeaderValues *bindingValuesPtr;
 } CWProtocolTransportHeaderValues;
 
 typedef struct {
@@ -480,8 +480,6 @@ typedef struct {
 	CWWTPDescriptor WTPDescriptor;
 	CWframeTunnelMode frameTunnelMode;
 	CWMACType MACType;
-	WTPglobalPhyInfo tmpPhyInfo;
-	
 } CWDiscoveryRequestValues;
 
 /*
@@ -680,7 +678,7 @@ typedef struct {
 	
 	void* bindingValuesPtr;
 	
-	WTPSinglePhyInfo gWTPPhyInfo;
+	//WTPSinglePhyInfo gWTPPhyInfo;
 	
 } CWWTPRadioInfoValues;
 
@@ -741,7 +739,6 @@ CWBool CWAssembleUnrecognizedMessageResponse(CWProtocolMessage **messagesPtr, in
 CWBool CWAssembleMsgElemRadioAdminState(CWProtocolMessage *msgPtr);			//29
 CWBool CWAssembleMsgElemRadioOperationalState(int radioID, CWProtocolMessage *msgPtr);	//30
 CWBool CWAssembleMsgElemResultCode(CWProtocolMessage *msgPtr,CWProtocolResultCode code);//31
-CWBool CWAssembleVendorMsgElemResultCodeWithPayload(CWProtocolMessage *msgPtr,CWProtocolResultCode code, CWProtocolVendorSpecificValues *payload);//49
 CWBool CWAssembleMsgElemSessionID(CWProtocolMessage *msgPtr, char * sessionID);		//32
 
 CWBool CWParseACName(CWProtocolMessage *msgPtr, int len, char **valPtr);

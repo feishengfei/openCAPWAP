@@ -620,14 +620,11 @@ CWBool CWSecurityInitContext(CWSecurityContext *ctxPtr,
 		
 		/*
 		 * 1. (TLS_RSA_WITH_AES_128_CBC_SHA) CAPWAP says: MUST be supported
-		 * 2. (TLS_RSA_WITH_3DES_EDE_CBC_SHA) CAPWAP says: MUST be supported
-		 * 3. (TLS_DH_RSA_WITH_AES_128_CBC_SHA) CAPWAP says: SHOULD be supported
-		 * 4. Not implemented in OpenSSL (TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA) 
-		 *    CAPWAP says: SHOULD be supported
+		 * 2. (TLS_DH_RSA_WITH_AES_128_CBC_SHA) CAPWAP says: SHOULD be supported
 		 */
 		/* set the ciphers supported by CAPWAP */
 		SSL_CTX_set_cipher_list((*ctxPtr),
-					"AES128-SHA:DES-CBC3-SHA:DH-RSA-AES128-SHA");
+					"AES128-SHA:DH-RSA-AES128-SHA");
 	} else { 
 		/* pre-shared keys */
 		printf("OpenSSL PrivateSharedKey not ready\n");

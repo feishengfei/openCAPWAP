@@ -136,12 +136,6 @@ typedef struct
 	WTPQosValues* qosValues;
 } bindingValues;
 
-/* NL80211Driver.c */
-int nl80211GetTxqParams(struct nl80211SocketUnit *nlSockUnit, WTPQosValues * qosValues, int ifindex);
-void nl80211GetPhyInfo();
-
-/*---------------------------*/
-
 typedef struct {
 	char RSSI;
 	char SNR;
@@ -155,7 +149,13 @@ typedef struct {
 
 extern const int gMaxCAPWAPHeaderSizeBinding;
 
-CWBool CWAssembleDataMessage(CWProtocolMessage **completeMsgPtr, int *fragmentsNumPtr, int PMTU, CWProtocolMessage *frame, CWBindingTransportHeaderValues *bindingValuesPtr, int is_crypted, int keepAlive);
+CWBool CWAssembleDataMessage(CWProtocolMessage **completeMsgPtr,
+		int *fragmentsNumPtr,
+		int PMTU,
+		CWProtocolMessage *frame,
+		int is_crypted,
+		int keepAlive);
+
 CWBool CWAssembleTransportHeaderBinding(CWProtocolMessage *transportHdrPtr, CWBindingTransportHeaderValues *valuesPtr);
 CWBool CWBindingCheckType(int elemType);
 CWBool CWParseTransportHeaderBinding(CWProtocolMessage *msgPtr, CWBindingTransportHeaderValues *valuesPtr);

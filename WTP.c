@@ -136,7 +136,6 @@ CWBool WTPExitOnUpdateCommit = CW_FALSE;
 
 //Elena Agostini: nl80211 support
 struct WTPglobalPhyInfo * gWTPglobalPhyInfo;
-struct nl80211SocketUnit globalNLSock;
 
 #define CW_SINGLE_THREAD
 

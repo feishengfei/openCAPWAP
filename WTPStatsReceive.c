@@ -115,14 +115,11 @@ CW_THREAD_RETURN_TYPE CWWTPReceiveStats(void *arg)
 			pData = (MM_MONITOR_DATA*)data->msg;
 		
         		
-			CW_CREATE_OBJECT_ERR(bindingValuesPtr, CWBindingTransportHeaderValues, EXIT_THREAD);
-			bindingValuesPtr->dataRate = -1; //to distinguish between wireless frame e data message (Daniele) see CWBindig.c line 224 
 		
 			if (CWAssembleDataMessage(&completeMsgPtr, 
 						   &fragmentsNum, 
 						   gWTPPathMTU, 
 						   data, 
-						   bindingValuesPtr,
 #ifdef CW_NO_DTLS
 			       			   CW_PACKET_PLAIN
 #else			       
@@ -152,7 +149,6 @@ CW_THREAD_RETURN_TYPE CWWTPReceiveStats(void *arg)
 			
 			CW_FREE_OBJECT(completeMsgPtr);				
 			CW_FREE_OBJECT(data);
-			CW_FREE_OBJECT(bindingValuesPtr);
 		}	
 	
 	} 

@@ -59,7 +59,7 @@ __inline__ int CWACGetInterfacesCount();
 /*  *******************___FUNCTIONS___*******************  */
 
 /* send Discovery Response to the host at the specified address */
-CWBool CWAssembleDiscoveryResponse(CWProtocolMessage **messagesPtr, int seqNum, WTPglobalPhyInfo * tmpPhyInfo) {
+CWBool CWAssembleDiscoveryResponse(CWProtocolMessage **messagesPtr, int seqNum) {
 
 	CWProtocolMessage *msgElems= NULL;
 	int msgElemCount = 4;
@@ -94,19 +94,6 @@ CWBool CWAssembleDiscoveryResponse(CWProtocolMessage **messagesPtr, int seqNum, 
 		return CW_FALSE; // error will be handled by the caller
 	}
 	
-	//Elena Agostini - 07/2014: wtp radio info replay
-	for(indexWTPRadio=0; indexWTPRadio<tmpPhyInfo->numPhyActive; indexWTPRadio++)
-	{
-		if(!(CWAssembleMsgElemACWTPRadioInformation(&(msgElems[++k]), tmpPhyInfo->singlePhyInfo[indexWTPRadio].radioID, tmpPhyInfo->singlePhyInfo[indexWTPRadio].phyStandardValue)))
-		{
-			CWErrorHandleLast();
-			int i;
-			for(i = 0; i <= k; i++) {CW_FREE_PROTOCOL_MESSAGE(msgElems[i]);}
-			CW_FREE_OBJECT(msgElems);
-			return CW_FALSE; // error will be handled by the caller
-		}
-	}
-	
 	return CWAssembleMessage(messagesPtr,
 				 &fragmentsNum,
 				 0,
@@ -132,10 +119,6 @@ CWBool CWParseDiscoveryRequestMessage(char *msg,
 		
 	CWProtocolMessage completeMsg;
 	
-	//Elena Agostini: nl80211 support
-	valuesPtr->tmpPhyInfo.numPhyActive=0;
-	CW_CREATE_ARRAY_CALLOC_ERR(valuesPtr->tmpPhyInfo.singlePhyInfo, WTP_RADIO_MAX, ACWTPSinglePhyInfo, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-
 
 	if(msg == NULL || seqNumPtr == NULL || valuesPtr == NULL) 
 		return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
@@ -202,16 +185,6 @@ CWBool CWParseDiscoveryRequestMessage(char *msg,
 					/* will be handled by the caller */
 					return CW_FALSE;
 				break;
-			case CW_MSG_ELEMENT_IEEE80211_WTP_RADIO_INFORMATION_CW_TYPE:
-				if(valuesPtr->tmpPhyInfo.numPhyActive < WTP_RADIO_MAX)
-					if(!(CWParseWTPRadioInformation(&completeMsg, 
-													elemLen, 
-													&(valuesPtr->tmpPhyInfo.singlePhyInfo[valuesPtr->tmpPhyInfo.numPhyActive].radioID),
-													&(valuesPtr->tmpPhyInfo.singlePhyInfo[valuesPtr->tmpPhyInfo.numPhyActive].phyStandardValue)
-													)
-					))return CW_FALSE;
-					valuesPtr->tmpPhyInfo.numPhyActive++;
-				break;
 			/*case CW_MSG_ELEMENT_WTP_RADIO_INFO_CW_TYPE:
 				// just count how many radios we have, so we can allocate the array
 			  	(*valuesPtr).radios.radiosCount++;
@@ -277,9 +250,5 @@ void CWDestroyDiscoveryRequestValues(CWDiscoveryRequestValues *valPtr) {
         }
         CW_FREE_OBJECT(valPtr->WTPBoardData.vendorInfos);
 	
-	//Elena Agostini: nl80211 support
-	if(valPtr->tmpPhyInfo.numPhyActive > 0)
-		CW_FREE_OBJECT(valPtr->tmpPhyInfo.singlePhyInfo);
-		
 			/*CW_FREE_OBJECT((valPtr->radios).radios);*/
 }

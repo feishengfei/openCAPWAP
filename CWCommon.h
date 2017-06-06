@@ -62,9 +62,8 @@
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <sys/file.h>
-#include "wireless_copy.h"
-       #include <netpacket/packet.h>
-      #include <net/ethernet.h> 
+#include <netpacket/packet.h>
+#include <net/ethernet.h> 
 /* CAPWAP local headers */
 #include "CWLog.h"
        
@@ -79,19 +78,7 @@
 #include <stdbool.h>
 #include <endian.h>
 
-#include <netlink/genl/genl.h>
-#include <netlink/genl/family.h>
-#include <netlink/genl/ctrl.h>
-#include <netlink/msg.h>
-#include <netlink/attr.h>
 
-#include "nl80211.h"
-#include "ieee80211.h"
-//From hostapd
-#include "HostapdHeaders/utils/common.h"
-#include "HostapdHeaders/common/ieee802_11_defs.h"
-#include "HostapdHeaders/common/ieee802_11_common.h"
-/* ******************************************* */
 
 // make sure the types really have the right sizes
 #define CW_COMPILE_TIME_ASSERT(name, x)               typedef int CWDummy_ ## name[(x) * 2 - 1]
@@ -194,14 +181,13 @@ extern char * wtpLogFile;
 #include "CWList.h"
 #include "CWSafeList.h"
 
-#include "IEEEBinding.h"
+//#include "IEEEBinding.h"
 
 #include "CWProtocol.h"
 #include "CWSecurity.h"
 #include "CWConfigFile.h"
 
 //ElenaAgostini
-#include "CWTunnel.h"
 #include "CWAVL.h"
 
 

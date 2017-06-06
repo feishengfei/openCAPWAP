@@ -46,7 +46,6 @@
 #include "ACMultiHomedSocket.h"
 #include "ACProtocol.h"
 #include "ACInterface.h"
-#include "ACBinding.h"
 
 #include <ctype.h>
 #include <netinet/in.h>
@@ -151,7 +150,6 @@ typedef struct {
 	CWThreadMutex interfaceMutex;
 	CWThreadCondition interfaceWait;
 	CWThreadCondition interfaceComplete;
-	WTPQosValues* qosValues;
 	/********************************************************
 	 * 2009 Updates:                                        *
 	 * - ofdmValues is a struct for setting the values of   *
@@ -162,7 +160,6 @@ typedef struct {
 	 *   (it will used for selecting the correct socket)    *
 	 ********************************************************/
 	
-	OFDMControlValues* ofdmValues;  
 	CWProtocolVendorSpecificValues* vendorValues;
 	int applicationIndex;
 	
@@ -170,7 +167,6 @@ typedef struct {
 	/**** ACInterface ****/
 	CWWTPProtocolManager WTPProtocolManager;
 	//Elena Agostini - 09/2014: WUM channel for WLAN Iface operations
-	WUMWLANCmdParameters * cmdWLAN;
 	
 	/* Retransmission */
 	CWProtocolMessage *messages;
@@ -246,7 +242,6 @@ extern int gInterfacesCount;
 extern char **gMulticastGroups;
 extern int gMulticastGroupsCount;
 extern CWMultiHomedSocket gACSocket;
-extern WTPQosValues* gDefaultQosValues;
 extern int gHostapd_port;
 extern char* gHostapd_unix_path;
 extern unsigned char WTPRadioInformationType;
@@ -319,15 +314,13 @@ CWBool CWAssembleConfigurationUpdateRequest(CWProtocolMessage **messagesPtr,
 						int seqNum,
 						int msgElement);
 
-CWBool CWAssembleStationConfigurationRequest(CWProtocolMessage **messagesPtr, int *fragmentsNumPtr, int PMTU, int seqNum, CWFrameAssociationResponse associationResponse, int WTPIndex, int Operation);
-
 
 CWBool CWAssembleClearConfigurationRequest(CWProtocolMessage **messagesPtr,
 					   int *fragmentsNumPtr, int PMTU,
 					   int seqNum);
 
 /* in ACDiscoveryState.c */
-CWBool CWAssembleDiscoveryResponse(CWProtocolMessage **messagesPtr, int seqNum, WTPglobalPhyInfo * tmp);
+CWBool CWAssembleDiscoveryResponse(CWProtocolMessage **messagesPtr, int seqNum);
 CWBool CWParseDiscoveryRequestMessage(char *msg,
 				      int len,
 				      int *seqNumPtr,
@@ -380,7 +373,6 @@ CWBool CWAssembleIEEEConfigurationRequest(CWProtocolMessage **messagesPtr,
 				   int radioID,
 				   int wlanNum,
 				   int WTPIndex);
-CWBool ACUpdateInfoWlanInterface(WTPInterfaceInfo * interfaceInfo, int wlanID, char * SSID, int tunnelMode);
 
 
 CWBool CWSecurityInitSessionServerDataChannel(CWWTPManager* pWtp, 

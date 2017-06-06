@@ -38,7 +38,6 @@
 
 #include "CWCommon.h"
 #include "CWVendorPayloads.h"
-#include "WUM.h"
 pthread_mutex_t gRADIO_MAC_mutex;
 
 #ifdef DMALLOC
@@ -197,9 +196,14 @@ CWBool CWAssembleTransportHeader(CWProtocolMessage *transportHdrPtr, CWProtocolT
 	unsigned int val = 0;
 	if(transportHdrPtr == NULL || valuesPtr == NULL) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
 	
+#if 0
 	if(valuesPtr->bindingValuesPtr != NULL)
 		{CW_CREATE_PROTOCOL_MESSAGE(*transportHdrPtr,gMaxCAPWAPHeaderSizeBinding+radio_mac_present, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););}
-	else {CW_CREATE_PROTOCOL_MESSAGE(*transportHdrPtr,8 + radio_mac_present, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););}	 // meaningful bytes of the header (no wirless header and MAC address)
+	// meaningful bytes of the header (no wirless header and MAC address)
+	else 
+#endif
+		{CW_CREATE_PROTOCOL_MESSAGE(*transportHdrPtr,8 + radio_mac_present, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););}	 
+
 	CWSetField32(val, 
 		     CW_TRANSPORT_HEADER_VERSION_START,
 		     CW_TRANSPORT_HEADER_VERSION_LEN,
@@ -212,23 +216,11 @@ CWBool CWAssembleTransportHeader(CWProtocolMessage *transportHdrPtr, CWProtocolT
 		     (valuesPtr->payloadType == CW_PACKET_PLAIN) ? 0 : 1);
 	
 	if(radio_mac_present)
-		if(valuesPtr->bindingValuesPtr != NULL)
-			CWSetField32(val,
-					 CW_TRANSPORT_HEADER_HLEN_START,
-					 CW_TRANSPORT_HEADER_HLEN_LEN,
-					 CW_BINDING_HLEN + 2);
-		else 
 			CWSetField32(val,
 					 CW_TRANSPORT_HEADER_HLEN_START,
 					 CW_TRANSPORT_HEADER_HLEN_LEN,
 					 2 + 2);
 	else
-		if(valuesPtr->bindingValuesPtr != NULL)
-			CWSetField32(val,
-					 CW_TRANSPORT_HEADER_HLEN_START,
-					 CW_TRANSPORT_HEADER_HLEN_LEN,
-					 CW_BINDING_HLEN);
-		else 
 			CWSetField32(val,
 					 CW_TRANSPORT_HEADER_HLEN_START,
 					 CW_TRANSPORT_HEADER_HLEN_LEN,
@@ -243,28 +235,11 @@ CWBool CWAssembleTransportHeader(CWProtocolMessage *transportHdrPtr, CWProtocolT
 		     CW_TRANSPORT_HEADER_WBID_START,
 		     CW_TRANSPORT_HEADER_WBID_LEN,
 		     1); // Wireless Binding ID
-	
-	
-	
-	
-	if(valuesPtr->bindingValuesPtr != NULL)
-		CWSetField32(val,
-		     CW_TRANSPORT_HEADER_T_START,
-		     CW_TRANSPORT_HEADER_T_LEN,
-		     1);
-	
-	else if(valuesPtr->type==1)
-		CWSetField32(val,
-		     CW_TRANSPORT_HEADER_T_START,
-		     CW_TRANSPORT_HEADER_T_LEN,
-		     1);
-	else 
-		CWSetField32(val,
-		     CW_TRANSPORT_HEADER_T_START,
-		     CW_TRANSPORT_HEADER_T_LEN,
-		     0);
-	
 
+	CWSetField32(val,
+		 CW_TRANSPORT_HEADER_T_START,
+		 CW_TRANSPORT_HEADER_T_LEN,
+		 valuesPtr->type == 1 ? 1:0);
 	
 	CWSetField32(val,
 		     CW_TRANSPORT_HEADER_F_START,
@@ -276,16 +251,10 @@ CWBool CWAssembleTransportHeader(CWProtocolMessage *transportHdrPtr, CWProtocolT
 		     CW_TRANSPORT_HEADER_L_LEN,
 		     valuesPtr->last); // last fragment
 	
-	if(valuesPtr->bindingValuesPtr != NULL)
-		CWSetField32(val,
-			     CW_TRANSPORT_HEADER_W_START,
-			     CW_TRANSPORT_HEADER_W_LEN,
-			     1); //wireless header
-	else 
-		CWSetField32(val,
-			     CW_TRANSPORT_HEADER_W_START,
-			     CW_TRANSPORT_HEADER_W_LEN,
-			     0);
+	CWSetField32(val,
+			 CW_TRANSPORT_HEADER_W_START,
+			 CW_TRANSPORT_HEADER_W_LEN,
+			 0);
 
 	if(radio_mac_present)
 		CWSetField32(val,
@@ -338,12 +307,6 @@ CWBool CWAssembleTransportHeader(CWProtocolMessage *transportHdrPtr, CWProtocolT
 		CWThreadMutexUnlock(&gRADIO_MAC_mutex);
 		
 		CWProtocolStore8(transportHdrPtr,0);
-	}
-
-
-	if(valuesPtr->bindingValuesPtr != NULL){
-		if (!CWAssembleTransportHeaderBinding(transportHdrPtr, valuesPtr->bindingValuesPtr))
-			return CW_FALSE;
 	}
 
 	return CW_TRUE;
@@ -476,70 +439,6 @@ CWBool CWAssembleControlHeader(CWProtocolMessage *controlHdrPtr, CWControlHeader
 	return CW_TRUE;
 }
 
-/*Update 2009:
-	Attach a payload with a result code to the message */
-CWBool CWAssembleVendorMsgElemResultCodeWithPayload(CWProtocolMessage *msgPtr, CWProtocolResultCode code, CWProtocolVendorSpecificValues *payload) {
-	if(msgPtr == NULL) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
-
-	int payloadSize = 0;
-
-	CWVendorUciValues *uciPayload;
-	CWVendorWumValues *wumPayload;
-
-	switch (payload->vendorPayloadType) {
-		case CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_UCI:
-			uciPayload = (CWVendorUciValues *) payload->payload;
-			if (uciPayload->response != NULL)
-				payloadSize = (strlen(uciPayload->response)*sizeof(unsigned char));
-		break;	
-		case CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_WUM:
-			wumPayload = (CWVendorWumValues *) payload->payload;
-			payloadSize = sizeof(unsigned char); /* default, only type */
-			if (wumPayload->type == WTP_VERSION_RESPONSE)
-				payloadSize = sizeof(unsigned char) * 4;
-		break;
-	}
-	
-	// create message
-	CW_CREATE_PROTOCOL_MESSAGE(*msgPtr, (sizeof(unsigned short)*2)+(sizeof(unsigned int)*2)+payloadSize, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-	
-	CWProtocolStore32(msgPtr, code);
-//	CWDebugLog("Result Code: %d", code);
-//
-	switch (payload->vendorPayloadType) {
-		case CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_UCI:
-			/*Store what type of payload we have*/
-			CWProtocolStore16(msgPtr, CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_CW_TYPE);
-			/*Store what type of vendor payload we have*/
-			CWProtocolStore16(msgPtr, CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_UCI);
-			/*Store payload size */
-			CWProtocolStore32(msgPtr, payloadSize);
-			if (uciPayload->response != NULL)
-				/*Store the payload*/
-				CWProtocolStoreStr(msgPtr, uciPayload->response);
-		break;
-		
-		case CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_WUM:
-			/* Store what type of payload we have */
-			CWProtocolStore16(msgPtr, CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_CW_TYPE);
-			/* Store what type of vendor payload we have */
-			CWProtocolStore16(msgPtr, CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_WUM);
-			/* Store payload size */ 
-			CWProtocolStore32(msgPtr, payloadSize);
-			
-			CWProtocolStore8(msgPtr, wumPayload->type);
-
-			if (wumPayload->type == WTP_VERSION_RESPONSE) {		
-				CWProtocolStore8(msgPtr, wumPayload->_major_v_);
-				CWProtocolStore8(msgPtr, wumPayload->_minor_v_);
-				CWProtocolStore8(msgPtr, wumPayload->_revision_v_);
-			}
-		break;
-	}
-				
-	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_RESULT_CODE_CW_TYPE_WITH_PAYLOAD);
-}
-
 
 CWBool CWAssembleMsgElemResultCode(CWProtocolMessage *msgPtr, CWProtocolResultCode code) {
 	if(msgPtr == NULL) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
@@ -619,7 +518,6 @@ CWBool CWAssembleMessage(CWProtocolMessage **completeMsgPtr, int *fragmentsNumPt
 		*fragmentsNumPtr = 1;
 	}
 	
-	transportVal.bindingValuesPtr = NULL;
 		
 	if(*fragmentsNumPtr == 1) {
 		//CWDebugLog("1 Fragment");
@@ -926,7 +824,6 @@ CWBool CWParseTransportHeader(CWProtocolMessage *msgPtr, CWProtocolTransportHead
 	valuesPtr->fragmentOffset = CWGetField32(val, CW_TRANSPORT_HEADER_FRAGMENT_OFFSET_START, CW_TRANSPORT_HEADER_FRAGMENT_OFFSET_LEN);
 //	CWDebugLog("FRAGMENT_OFFSET: %d", valuesPtr->fragmentOffset);
 
-	valuesPtr->bindingValuesPtr = NULL;
 
 	
 	if (*dataFlagPtr == CW_TRUE){
@@ -940,26 +837,11 @@ CWBool CWParseTransportHeader(CWProtocolMessage *msgPtr, CWProtocolTransportHead
 			KeepAliveLenght = CWProtocolRetrieve16(msgPtr);
 		}else if (valuesPtr->type==0){	//IEEE 802.3 frame
 			CWLog("802.3 frame");
-			if (optionalWireless){
-				CW_CREATE_OBJECT_ERR( valuesPtr->bindingValuesPtr, CWBindingTransportHeaderValues, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY,NULL););
-				if (!CWParseTransportHeaderBinding(msgPtr, valuesPtr->bindingValuesPtr)){
-					CW_FREE_OBJECT(valuesPtr->bindingValuesPtr);
-					return CW_FALSE;
-				}
-			}
-			else
-			{
+			if (!optionalWireless){
 				msgPtr->data_msgType=CW_IEEE_802_3_FRAME_TYPE;
 			}
 		}else if (valuesPtr->type==1){	//IEEE 802.11 frame
 		//	CWDebugLog("802.11 frame");
-			if (optionalWireless){
-				CW_CREATE_OBJECT_ERR( valuesPtr->bindingValuesPtr, CWBindingTransportHeaderValues, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY,NULL););
-				if (!CWParseTransportHeaderBinding(msgPtr, valuesPtr->bindingValuesPtr)){
-					CW_FREE_OBJECT(valuesPtr->bindingValuesPtr);
-					return CW_FALSE;
-				}
-			}
 			msgPtr->data_msgType=CW_IEEE_802_11_FRAME_TYPE;
 		}else{
 			CWLog("Todo: This should be a keep-alive data packet!!!!");
@@ -976,11 +858,6 @@ CWBool CWParseTransportHeader(CWProtocolMessage *msgPtr, CWProtocolTransportHead
 	}else{
 		if(transport4BytesLen == 4 && optionalWireless == 1){
 			*dataFlagPtr = CW_TRUE;
-			CW_CREATE_OBJECT_ERR( valuesPtr->bindingValuesPtr, CWBindingTransportHeaderValues, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY,NULL););
-			if (!CWParseTransportHeaderBinding(msgPtr, valuesPtr->bindingValuesPtr)){
-				CW_FREE_OBJECT(valuesPtr->bindingValuesPtr);
-				return CW_FALSE;
-			}
  		}else if( m ){
 			//CW_CREATE_OBJECT_ERR( valuesPtr->MACValuesPtr, CWMACTransportHeaderValues, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY,NULL););
 	

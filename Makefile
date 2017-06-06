@@ -43,9 +43,9 @@ CC = gcc
 LDFLAGS = -lssl -lcrypto -lpthread -ldl -D_REENTRANT
 
 #Elena Agostini: libnl
-LDFLAGS += -lnl-genl-3 -lnl-3
+#LDFLAGS += -lnl-genl-3 -lnl-3
 LIB_PATH = /usr/local/lib
-INC_PATH = /usr/include/libnl3
+#INC_PATH = /usr/include/libnl3
  
 #LDFLAGS = /usr/lib/libefence.a ./static/libssl.a ./static/libcrypto.a -lpthread -ldl -D_REENTRANT
 #LDFLAGS = ./static/libssl.a ./static/libcrypto.a -lpthread -ldl -D_REENTRANT
@@ -73,8 +73,8 @@ CFLAGS += -DOPENSSL_NO_KRB5
 #OpenSSL inc files path
 #CFLAGS += $(OPENSSL_INCLUDE)  
 
-CFLAGS += -I/usr/include/libnl3
-CFLAGS += -I./HostapdHeaders/utils/
+#CFLAGS += -I/usr/include/libnl3
+#CFLAGS += -I./HostapdHeaders/utils/
 RM = /bin/rm -f 
 
 # list of generated object files for AC. 
@@ -82,19 +82,23 @@ AC_OBJS = AC.o ACConfigFile.o ACMainLoop.o ACDiscoveryState.o ACJoinState.o \
 	ACConfigureState.o ACDataCheckState.o ACRunState.o ACProtocol_User.o \
 	ACRetransmission.o CWCommon.o CWConfigFile.o CWErrorHandling.o CWList.o \
 	CWSyslog.o ACMultiHomedSocket.o ACProtocol.o CWSafeList.o CWNetwork.o CWProtocol.o \
-	CWRandom.o CWSecurity.o CWOpenSSLBio.o CWStevens.o CWThread.o CWBinding.o CWVendorPayloadsAC.o \
-	ACBinding.o ACInterface.o ACSettingsFile.o timerlib.o tap.o \
-	ACIEEEConfigurationState.o CW80211InformationElements.o CWTunnel.o CWAVL.o \
-	./HostapdHeaders/utils/os_unix.o \
+	CWRandom.o CWSecurity.o CWOpenSSLBio.o CWStevens.o CWThread.o CWBinding.o \
+	ACInterface.o ACSettingsFile.o timerlib.o \
+	  CWAVL.o
+
+# Netlink, 802.11 IEEE related stuff, useless if we don't want real wifi AC-WTP comunicating/configuring
+#ACIEEEConfigurationState.o CW80211InformationElements.o ACBinding.o CWTunnel.o tap.o 
 
 # list of generated object files for WTP.
 WTP_OBJS = WTP.o WTPFrameReceive.o WTPFreqStatsReceive.o WTPStatsReceive.o WTPConfigFile.o WTPProtocol.o WTPProtocol_User.o \
 	WTPDiscoveryState.o WTPJoinState.o WTPConfigureState.o WTPDataCheckState.o WTPRunState.o WTPRunStateCheck.o \
 	WTPRetransmission.o WTPSulkingState.o CWCommon.o CWConfigFile.o CWErrorHandling.o CWSafeList.o CWList.o CWSyslog.o CWNetwork.o \
-	CWProtocol.o CWRandom.o CWSecurity.o CWOpenSSLBio.o CWStevens.o CWThread.o CWBinding.o CWVendorPayloadsWTP.o WTPBinding.o \
-	WTPDriverInteraction.o WTPSettingsFile.o timerlib.o \
-	WTPRadio.o WTPNL80211DriverCallback.o WTPNL80211Driver.o WTPNL80211Netlink.o WTPIEEEConfigurationState.o CW80211ManagementFrame.o CW80211InformationElements.o CWTunnel.o CWAVL.o \
-	./HostapdHeaders/utils/os_unix.o \
+	CWProtocol.o CWRandom.o CWSecurity.o CWOpenSSLBio.o CWStevens.o CWThread.o CWBinding.o \
+	WTPSettingsFile.o timerlib.o \
+	CWAVL.o 
+
+# Netlink, 802.11 IEEE related stuff, useless if we don't want real wifi AC-WTP comunicating/configuring
+#WTPNL80211DriverCallback.o WTPNL80211Driver.o WTPNL80211Netlink.o WTPRadio.o WTPIEEEConfigurationState.o CW80211ManagementFrame.o CW80211InformationElements.o CWTunnel.o WTPDriverInteraction.o WTPBinding.o
 	
 WUA_OBJS = WUA.o
  
@@ -114,7 +118,7 @@ WUA_NAME = WUA
 .PHONY: deps clean clean_libs libs
 
 # top-level rule, to compile everything. 
-all: $(AC_NAME) $(WTP_NAME) $(WUA_NAME)
+all: $(AC_NAME) $(WTP_NAME) 
 
 $(AC_NAME): $(AC_OBJS) 
 	$(CC) $(AC_OBJS) $(CC_FLAGS) $(OPENSSL_INCLUDE) $(LDFLAGS) -o $(AC_NAME) 

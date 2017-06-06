@@ -37,7 +37,7 @@
 
 
 #include "CWAC.h"
-#include "CWVendorPayloads.h"
+#include "ACProtocol_User.h"
 
 #ifdef DMALLOC
 #include "../dmalloc-5.5.0/dmalloc.h"
@@ -67,36 +67,6 @@ CWBool CWProtocolAssembleConfigurationUpdateRequest(CWProtocolMessage **msgElems
 
 	CW_CREATE_PROTOCOL_MSG_ARRAY_ERR(*msgElems, *msgElemCountPtr, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
 	
-	/* Selection of type of Conf Update Request */
-
-	switch(MsgElementType) {
-		case CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_UCI:
-
-				// Assemble Message Elements
-				if (!(CWAssembleWTPVendorPayloadUCI(&(*msgElems[++k]))))
-				{
-					int i;
-					for(i = 0; i <= k; i++) {CW_FREE_PROTOCOL_MESSAGE(*msgElems[i]);}
-					CW_FREE_OBJECT(*msgElems);
-					return CW_FALSE; // error will be handled by the caller
-				}
-		break;
-		case CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_WUM:
-
-                                // Assemble Message Elements
-                                if (!(CWAssembleWTPVendorPayloadWUM(&(*msgElems[++k]))))
-                                {
-                                        int i;
-                                        for(i = 0; i <= k; i++) {CW_FREE_PROTOCOL_MESSAGE(*msgElems[i]);}
-                                        CW_FREE_OBJECT(*msgElems);
-                                        return CW_FALSE; // error will be handled by the caller
-                                }
-                break;
-		default:
-	  	{
-			return CW_FALSE; // error will be handled by the caller
-	  	}
-	}
 
 	CWLog("Protocol Configuration Update Request Assembled");
 
@@ -289,85 +259,6 @@ CWBool CWAssembleMsgElemACName(CWProtocolMessage *msgPtr) {
 	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_AC_NAME_CW_TYPE);
 }
 
-/* ++++++++++++  Elena Agostini: 09/2014. IEEE 802.11 Binding ++++++++++++ */
-CWBool CWAssembleMsgElemACAddWlan(int radioID, WTPInterfaceInfo interfaceInfo, CWProtocolMessage *msgPtr){
-	int index;
-	int lenPacket=CW_MSG_IEEE_ADD_WLAN_MIN_LEN;
-	lenPacket += strlen(interfaceInfo.SSID);
-	 unsigned short int capabilityMsg=0;
-	 
-	//Create Message: 23 + SSID length
-	CW_CREATE_PROTOCOL_MESSAGE(*msgPtr, lenPacket, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-	
-	//Radio ID
-	CWProtocolStore8(msgPtr, radioID);
-	//WLAN ID
-	CWProtocolStore8(msgPtr, interfaceInfo.wlanID);
-	//Capability
-	CWProtocolStore16(msgPtr, interfaceInfo.capabilityBit);	
-	//Key index
-	CWProtocolStore8(msgPtr, interfaceInfo.keyIndex);
-	//Key Status
-	CWProtocolStore8(msgPtr, interfaceInfo.keyStatus);
-	//key Length
-	CWProtocolStore16(msgPtr, WLAN_KEY_LEN);	
-	//Key
-	CWProtocolStoreRawBytes(msgPtr, interfaceInfo.key, WLAN_KEY_LEN);
-	//Group TSC
-	CWProtocolStoreRawBytes(msgPtr, interfaceInfo.groupTSC, WLAN_GROUP_TSC_LEN);
-	//QoS
-	CWProtocolStore8(msgPtr, interfaceInfo.qos);
-	//Auth Type
-	CWProtocolStore8(msgPtr, interfaceInfo.authType);
-	//MAC Mode
-	CWProtocolStore8(msgPtr, interfaceInfo.MACmode);
-	//Tunnel Mode
-	CWProtocolStore8(msgPtr, interfaceInfo.frameTunnelMode);
-	//suppressSSID
-	CWProtocolStore8(msgPtr, interfaceInfo.suppressSSID);
-	//SSSID
-	CWProtocolStoreRawBytes(msgPtr, interfaceInfo.SSID, strlen(interfaceInfo.SSID));
-	
-	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_IEEE80211_ADD_WLAN_CW_TYPE);
-}
-
-CWBool CWAssembleMsgElemACDelWlan(int radioID, int wlanID,  CWProtocolMessage *msgPtr){
-	
-	CW_CREATE_PROTOCOL_MESSAGE(*msgPtr, 2, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-	
-	//Radio ID
-	CWProtocolStore8(msgPtr, radioID);
-	//WLAN ID
-	CWProtocolStore8(msgPtr, wlanID);
-	
-	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_IEEE80211_DELETE_WLAN_CW_TYPE);
-}
-
-CWBool CWAssembleMsgElemACUpdateWlan(int radioID, WTPInterfaceInfo interfaceInfo, CWProtocolMessage *msgPtr){
-	
-	int index;
-	int lenPacket=12;
-	 
-	//Create Message: 23 + SSID length
-	CW_CREATE_PROTOCOL_MESSAGE(*msgPtr, lenPacket, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-	
-	//Radio ID
-	CWProtocolStore8(msgPtr, radioID);
-	//WLAN ID
-	CWProtocolStore8(msgPtr, interfaceInfo.wlanID);
-	//Capability
-	for(index=0; index<WLAN_CAPABILITY_NUM_FIELDS; index++)
-		CWProtocolStore8(msgPtr, interfaceInfo.capability[index]);
-	
-	//Key index
-	CWProtocolStore8(msgPtr, interfaceInfo.keyIndex);
-	//Key Status
-	CWProtocolStore8(msgPtr, interfaceInfo.keyStatus);
-	//Key
-	CWProtocolStoreRawBytes(msgPtr, interfaceInfo.key, WLAN_KEY_LEN);
-
-	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_IEEE80211_UPDATE_WLAN_CW_TYPE);
-}
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 
 CWBool CWAssembleMsgElemAddStation(int radioID,CWProtocolMessage *msgPtr,unsigned char* StationMacAddr)
@@ -389,6 +280,7 @@ CWBool CWAssembleMsgElemAddStation(int radioID,CWProtocolMessage *msgPtr,unsigne
 	
 }
 
+/*
 CWBool CWAssembleMsgElem80211Station(int radioID, int wlanID, CWProtocolMessage *msgPtr, CWFrameAssociationResponse associationResponse)
 {
 	// create message
@@ -416,6 +308,7 @@ CWBool CWAssembleMsgElem80211Station(int radioID, int wlanID, CWProtocolMessage 
 	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_IEEE80211_STATION);
 	
 }
+*/
 
 CWBool CWAssembleMsgElemDeleteStation(int radioID,CWProtocolMessage *msgPtr,unsigned char* StationMacAddr){
 	const int delete_Station_Length=8;
@@ -908,41 +801,6 @@ CWBool CWParseWTPRadioInformation(CWProtocolMessage *msgPtr, int len, int * radi
 	CWProtocolRetrieve8(msgPtr);	// Res
 	(*valPtr) = CWProtocolRetrieve8(msgPtr);	// Radio Information 
 
-	CWParseMessageElementEnd();							
-}
-
-CWBool CWParseWTPSupportedRates(CWProtocolMessage *msgPtr, int len, int * radioID, unsigned char **valPtr, int * valLen) {	
-	CWParseMessageElementStart();
-	(*valLen)=0;
-	(*radioID) = CWProtocolRetrieve8(msgPtr);		
-	int index=0;
-	for(index=0; index < CW_80211_MAX_SUPP_RATES; index++)
-	{
-		(*valPtr)[index] = CWProtocolRetrieve8(msgPtr);
-		(*valLen)++;
-		if(((msgPtr->offset) - oldOffset) == len)
-			break;
-	}
-	
-	CWParseMessageElementEnd();							
-}
-
-//Elena Agostini-08/2014: nl80211 support
-CWBool CWParseWTPMultiDomainCapability(CWProtocolMessage *msgPtr, int len, PhyFrequencyInfoConfigureMessage * valPtr) {	
-	
-	CWParseMessageElementStart();
-	
-	//radio id
-	valPtr->radioID = CWProtocolRetrieve8(msgPtr);
-	//reserved
-	CWProtocolRetrieve8(msgPtr);
-	//first channel frequency
-	valPtr->firstChannel = CWProtocolRetrieve16(msgPtr);
-	//tot channels
-	valPtr->totChannels = CWProtocolRetrieve16(msgPtr);
-	//max transmission power
-	valPtr->maxTxPower = CWProtocolRetrieve16(msgPtr);
-	
 	CWParseMessageElementEnd();							
 }
 

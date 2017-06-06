@@ -57,7 +57,12 @@ CWBool CWBindingCheckType(int elemType)
 
 // Assemble a CAPWAP Data Packet creating Transport Header.
 // completeMsgPtr is an array of fragments (can be of size 1 if the packet doesn't need fragmentation)
-CWBool CWAssembleDataMessage(CWProtocolMessage **completeMsgPtr, int *fragmentsNumPtr, int PMTU, CWProtocolMessage *frame, CWBindingTransportHeaderValues *bindingValuesPtr, int is_crypted, int keepAlive)
+CWBool CWAssembleDataMessage(CWProtocolMessage **completeMsgPtr,
+		int *fragmentsNumPtr,
+		int PMTU,
+		CWProtocolMessage *frame,
+		int is_crypted,
+		int keepAlive)
 {
 
 	CWProtocolMessage transportHdr;
@@ -84,7 +89,6 @@ CWBool CWAssembleDataMessage(CWProtocolMessage **completeMsgPtr, int *fragmentsN
 		*fragmentsNumPtr = 1;
 	}
 	
-	transportVal.bindingValuesPtr = bindingValuesPtr;
 	
 	/*
 	 * Elena Agostini - 02/2014

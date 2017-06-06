@@ -777,7 +777,7 @@ Please refers to 6.1 on [RFC5415](https://tools.ietf.org/rfc/rfc5415.txt)
 |CAPWAP Local IPv6 Address|50|4.6.12|MUST if no 'CAPWAP Local IPv4 Address' included|N|
 |CAPWAP Transport Protocol|51|4.6.14|MAY|N|
 |Maximum Message Length|29|4.6.31|MAY|N|
-|WTP Reboot Statistics|48|4.6.14|MAY|N|
+|WTP Reboot Statistics|48|4.6.47|MAY|N|
 |Vendor Specific Payload|37|4.6.39|MAY|N|
 
 

@@ -43,7 +43,6 @@
 /*  *******************___INCLUDE___*******************  */
 
 #include "CWCommon.h"
-#include "WTPBinding.h"
 //Elena Agostini - 07/2014
 //#include "NL80211.h"
 
@@ -243,25 +242,6 @@ CWBool CWUpdatePendingMsgBox(CWPendingRequestMessage *pendingRequestMsgs,
 			     
 //in WTPDriverInteraction.c
 
-/*
- * Elena Agostini - 02/2014
- * 
- * No more ioctl() on wireless drivers.
- * API coming soon..
- */
-
-//#ifdef SOFTMAC
-int set_wme_cwmin(int acclass,int value);
-int set_wme_cwmax(int acclass,int value);
-int set_wme_aifsn(int acclass,int value);
-//#else
-int set_cwmin(int sock, struct iwreq wrq, int acclass, int sta, int value);
-int get_cwmin(int sock, struct iwreq* wrq, int acclass, int sta);
-int set_cwmax(int sock, struct iwreq wrq, int acclass, int sta, int value);
-int get_cwmax(int sock, struct iwreq* wrq, int acclass, int sta);
-int set_aifs(int sock, struct iwreq wrq, int acclass, int sta, int value);
-int get_aifs(int sock, struct iwreq* wrq, int acclass, int sta);
-//#endif
 
 /* in WTPDiscoveryState.c */
 CWStateTransition CWWTPEnterDiscovery();

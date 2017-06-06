@@ -126,7 +126,6 @@ CWStateTransition CWWTPEnterDataCheck() {
 			    &fragmentsNum, 
 			    gWTPPathMTU, 
 			    &sessionIDmsgElem, 
-			    NULL,
 				CW_PACKET_CRYPT,
 			    1
 			    ))

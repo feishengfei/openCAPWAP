@@ -36,8 +36,6 @@
  *******************************************************************************************/
 
 #include "WTPFrameReceive.h"
-#include "common.h"
-#include "ieee802_11_defs.h"
 
 #ifdef DMALLOC
 #include "../dmalloc-5.5.0/dmalloc.h"
@@ -147,30 +145,6 @@ int macAddrCmp (unsigned char* addr1, unsigned char* addr2){
 	else {CWDebugLog("MAC Address test: Failed\n");}
 	
 	return ok;
-}
-
-int from_8023_to_80211( unsigned char *inbuffer,int inlen, unsigned char *outbuffer, unsigned char *own_addr){
-
-	int indx=0;
-	struct ieee80211_hdr hdr;
-	os_memset(&hdr,0,sizeof(struct ieee80211_hdr));
-
-	hdr.frame_control = IEEE80211_FC(WLAN_FC_TYPE_DATA, WLAN_FC_STYPE_DATA);
-	hdr.duration_id = 0;
-	hdr.seq_ctrl = 0;
-
-	os_memcpy(hdr.addr1, own_addr, ETH_ALEN);
-	os_memcpy(hdr.addr2, inbuffer + ETH_ALEN, ETH_ALEN);
-	os_memcpy(hdr.addr3, inbuffer, ETH_ALEN);
-	CLEARBIT(hdr.frame_control,9);
-	SETBIT(hdr.frame_control,8);	
-	
-	os_memcpy(outbuffer + indx,&hdr,sizeof(hdr));
-	indx += sizeof(hdr);
-	os_memcpy(outbuffer + indx, inbuffer, inlen);
-	indx += inlen;
-	
-	return indx;
 }
 
 #ifdef SPLIT_MAC

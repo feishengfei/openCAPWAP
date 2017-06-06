@@ -37,6 +37,7 @@
 
  
 #include "CWAC.h"
+#include "ACProtocol_User.h"
 
 #ifdef DMALLOC
 #include "../dmalloc-5.5.0/dmalloc.h"
