@@ -81,14 +81,7 @@ CWStateTransition CWWTPEnterDataCheck() {
  */
 
 #ifdef CW_DTLS_DATA_CHANNEL
-
-	int 			n,readBytes;
-	char 			buf[CW_BUFFER_SIZE];
-	CWNetworkLev4Address	addr;
-	CWList 			fragments = NULL;
 	CWProtocolMessage 	msgPtr;
-	CWBool 			dataFlag = CW_TRUE;
-	int msg_len;
 	
 	struct sockaddr_in *tmpAdd = (struct sockaddr_in *) &(gACInfoPtr->preferredAddress);
 	tmpAdd->sin_port = htons(5247);
@@ -138,7 +131,7 @@ CWStateTransition CWWTPEnterDataCheck() {
 				CW_FREE_PROTOCOL_MESSAGE(messages[i]);
 			}	
 		CW_FREE_OBJECT(messages);
-		return;
+		return CW_FALSE;
 	}
 	
 	int i;

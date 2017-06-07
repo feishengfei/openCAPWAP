@@ -239,7 +239,7 @@ CWBool CWAssembleMsgElemVendorSpecificPayload(CWProtocolMessage *msgPtr) {
 	const int  ELEMENT_ID = 2; 	//Type and Length of a TLV field is 4 byte long 
 	const int  DATA_LEN = 2;
 	CWWTPVendorInfos infos;
-	int i, size = 0;
+	int size = 0;
 	int element_id_zero = 0;
 	int data_zero = 0;
 	
@@ -549,20 +549,6 @@ CWBool CWAssembleMsgElemWTPRebootStatistics(CWProtocolMessage *msgPtr)
 //	CWDebugLog("WTPRebootStat(3): %d - %d", gWTPRebootStatistics.unknownFailureCount, gWTPRebootStatistics.lastFailureType);
 
 	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_WTP_REBOOT_STATISTICS_CW_TYPE);
-}
-
-//Elena Agostini - 11/2014: Delete Station Msg Elem
-CWBool CWAssembleMsgElemWTPDeleteStation(CWProtocolMessage *msgPtr, CWMsgElemDataDeleteStation * infoDeleteStation)
-{	
-	if(msgPtr == NULL || infoDeleteStation == NULL) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
-	
-	CW_CREATE_PROTOCOL_MESSAGE(*msgPtr, 2+ETH_ALEN, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-	
-	CWProtocolStore8(msgPtr, infoDeleteStation->radioID);
-	CWProtocolStore8(msgPtr, ETH_ALEN);
-	CWProtocolStoreRawBytes(msgPtr, infoDeleteStation->staAddr, ETH_ALEN);
-	
-	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_DELETE_STATION_CW_TYPE);
 }
 
 //test version
@@ -917,9 +903,11 @@ CWBool CWParseACDescriptor(CWProtocolMessage *msgPtr, int len, CWACInfoValues *v
 		//CWDebugLog("differenza:%d, offset:%d, oldOffset:%d", (msgPtr->offset-oldOffset), (msgPtr->offset), oldOffset);
 
 		id=CWProtocolRetrieve32(msgPtr);
+		id = id;
 //		CWDebugLog("ID: %d", id); // ID
 		
 		type=CWProtocolRetrieve16(msgPtr);
+		type = type;
 //		CWDebugLog("TYPE: %d",type); // type
 		
 		tmp = CWProtocolRetrieve16(msgPtr);
@@ -1007,86 +995,6 @@ CWBool CWParseACIPv6List(CWProtocolMessage *msgPtr, int len, ACIPv6ListValues *v
 		
 //		CWUseSockNtop(&addr, CWDebugLog("AC IPv6 List: %s",str););
 	}
-	
-	CWParseMessageElementEnd();
-}
-
-/* ------------------------------------ Elena Agostini: OLD HOSTAPD IEEE BINDING ------------------------------------ */
-CWBool CWParseDeleteStation(CWProtocolMessage *msgPtr, int len, int * radioID, char ** address) 
-{
-	int Length=0;
-	
-	//CWParseMessageElementStart();	 sostituire al posto delle righe successive quando passerò valPtr alla funzione CWarseAddStation
-	/*--------------------------------------------------------------------------------------*/
-	int oldOffset;												
-	if(msgPtr == NULL) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);	
-	oldOffset = msgPtr->offset;
-	/*----------------------------------------------------------------------------------*/
-	
-	(*radioID) = CWProtocolRetrieve8(msgPtr);
-	Length = CWProtocolRetrieve8(msgPtr);
-	(*address) = (unsigned char*)CWProtocolRetrieveRawBytes(msgPtr, Length);
-	    
- /*   CWDebugLog("ADD MAC: %02X:%02X:%02X:%02X:%02X:%02X", (unsigned char)(*address)[0],
-														 (unsigned char)(*address)[1],
-														 (unsigned char)(*address)[2],
-														 (unsigned char)(*address)[3],
-														 (unsigned char)(*address)[4],
-														 (unsigned char)(*address)[5]);
-*/
-	CWParseMessageElementEnd();  
-}
-
-CWBool CWParseAddStation(CWProtocolMessage *msgPtr, int len, int * radioID, char ** address) 
-{
-	int Length=0;
-	
-	//CWParseMessageElementStart();	 sostituire al posto delle righe successive quando passerò valPtr alla funzione CWarseAddStation
-	/*--------------------------------------------------------------------------------------*/
-	int oldOffset;												
-	if(msgPtr == NULL) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);	
-	oldOffset = msgPtr->offset;
-	/*----------------------------------------------------------------------------------*/
-	
-	(*radioID) = CWProtocolRetrieve8(msgPtr);
-	Length = CWProtocolRetrieve8(msgPtr);
-	(*address) = (unsigned char*)CWProtocolRetrieveRawBytes(msgPtr, Length);
-	
-	/*    
-    CWDebugLog("ADD MAC: %02X:%02X:%02X:%02X:%02X:%02X", (unsigned char)(*address)[0],
-														 (unsigned char)(*address)[1],
-														  (unsigned char)(*address)[2],
-														   (unsigned char)(*address)[3],
-														    (unsigned char)(*address)[4],
-														     (unsigned char)(*address)[5]);
-	*/
-	//CWWTPsend_command_to_hostapd_SET_ADDR( tmp_mac,7);												     
-
-	CWParseMessageElementEnd();  
-}
-/* ------------------------------------------------------------------------------------------ */
-
-/* +++++++++++++++++++++++++ Elena Agostini - 10/2014 IEEE BINDING +++++++++++++++++++++++++ */
-CWBool CWParse80211Station(CWProtocolMessage *msgPtr, int len, int * radioID, short int * assID, char * flags, char ** address, short int * capability, int * wlanID, int * supportedRatesLen, char ** supportedRates) 
-{
-	//CWParseMessageElementStart();	sostituire al posto delle righe successive quando passerò valPtr alla funzione CWarseAddStation
-	/*--------------------------------------------------------------------------------------*/
-	int oldOffset;												
-	if(msgPtr == NULL) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);	
-	oldOffset = msgPtr->offset;
-	/*----------------------------------------------------------------------------------*/
-	
-	(*radioID) = CWProtocolRetrieve8(msgPtr);
-	(*assID) = CWProtocolRetrieve16(msgPtr);
-	(*flags) = CWProtocolRetrieve8(msgPtr);
-	(*address) = (unsigned char*)CWProtocolRetrieveRawBytes(msgPtr, ETH_ALEN);
-	(*capability) = CWProtocolRetrieve16(msgPtr);
-	(*wlanID) = CWProtocolRetrieve8(msgPtr);
-	
-	(*supportedRatesLen) = len-(1+2+1+ETH_ALEN+2+1);
-
-	CW_CREATE_ARRAY_CALLOC_ERR((*supportedRates), (*supportedRatesLen)+1, char,  return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-	CW_COPY_MEMORY((*supportedRates), (unsigned char*)CWProtocolRetrieveRawBytes(msgPtr, (*supportedRatesLen)), (*supportedRatesLen));
 	
 	CWParseMessageElementEnd();
 }

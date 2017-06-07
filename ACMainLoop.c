@@ -181,15 +181,16 @@ void CWACManageIncomingPacket(CWSocket sock,
 			      CWNetworkLev4Address *addrPtr,CWBool dataFlag) {
  
 	CWWTPManager *wtpPtr = NULL;
-	genericHandshakeThreadPtr tmpGenericThreadList, wtpGenericPtr;
 	char* pData;
-	CWBool dataFlagTmp;
 	CWProtocolMessage msgDataChannel;
 	char *valSessionIDPtr=NULL;
-	int KeepAliveLenght=0;
 	unsigned short int elemType, elemLen;
-	CWSecuritySession sessionDataGeneric;
-	int pathMTU, indexTmpThread=0;
+
+#ifdef CW_DTLS_DATA_CHANNEL
+	genericHandshakeThreadPtr wtpGenericPtr;
+	int indexTmpThread=0;
+#endif
+
 /*
  * Elena Agostini - 04/2014: generic handshake datachannel WTP
  */
@@ -214,7 +215,7 @@ void CWACManageIncomingPacket(CWSocket sock,
 					{
 						if(listGenericThreadDTLSData[indexTmpThread] == NULL)
 						{
-							CW_CREATE_OBJECT_ERR(listGenericThreadDTLSData[indexTmpThread], genericHandshakeThread, return NULL; );
+							CW_CREATE_OBJECT_ERR(listGenericThreadDTLSData[indexTmpThread], genericHandshakeThread, return; );
 
 							struct sockaddr_in *tmpAdd = (struct sockaddr_in *) addrPtr;
 							CWLog("[DTLS] New generic thread for WTP %s:%d", inet_ntoa(tmpAdd->sin_addr), ntohs(tmpAdd->sin_port));
@@ -271,7 +272,6 @@ void CWACManageIncomingPacket(CWSocket sock,
 			/* Elena Agostini - 04/2014: more WTPs with same IPs, different PORTs */
 			if(dataFlag == CW_TRUE)
 			{	
-					CWProtocolMessage msg;
 					CWProtocolTransportHeaderValues values;
 					
 					msgDataChannel.msg = buf;
@@ -279,7 +279,7 @@ void CWACManageIncomingPacket(CWSocket sock,
 					
 					if(!CWParseTransportHeader(&msgDataChannel, &values, &dataFlag, NULL)){
 						CWDebugLog("CWParseTransportHeader failed");
-						return CW_FALSE;
+						return ;
 					}
 					
 					if(msgDataChannel.data_msgType == CW_DATA_MSG_KEEP_ALIVE_TYPE) {
@@ -299,7 +299,6 @@ void CWACManageIncomingPacket(CWSocket sock,
 	/* Elena Agostini - 04/2014: more WTPs with same IPs, different PORTs */
 	if(dataFlag == CW_TRUE)
 	{	
-			CWProtocolMessage msg;
 			CWProtocolTransportHeaderValues values;
 			
 			msgDataChannel.msg = buf;
@@ -367,6 +366,7 @@ void CWACManageIncomingPacket(CWSocket sock,
 			exit(1);
 			
 		tmp = gActiveWTPs;
+		tmp = tmp;
 		CWThreadMutexUnlock(&gActiveWTPsMutex);
 
 		if(gActiveWTPs >= gMaxWTPs) {
@@ -555,7 +555,7 @@ __inline__ CWWTPManager *CWWTPByAddress(CWNetworkLev4Address *addressPtr, CWSock
 				(
 					(dataFlag == CW_TRUE) &&
 					( 
-						(sessionID != NULL) && (memcmp(gWTPs[i].WTPProtocolManager.sessionID, sessionID, WTP_SESSIONID_LENGTH) == 0) ||
+						((sessionID != NULL) && (memcmp(gWTPs[i].WTPProtocolManager.sessionID, sessionID, WTP_SESSIONID_LENGTH) == 0)) ||
 						(
 							(!sock_cmp_addr((struct sockaddr*)addressPtr, (struct sockaddr*)&(gWTPs[i].dataaddress),sizeof(CWNetworkLev4Address))) &&
 							(!sock_cmp_port((struct sockaddr*)addressPtr, (struct sockaddr*)&(gWTPs[i].dataaddress), sizeof(CWNetworkLev4Address)))
@@ -880,7 +880,7 @@ CW_THREAD_RETURN_TYPE CWManageWTP(void *arg) {
 					if(gWTPs[i].sessionDataActive == CW_FALSE)
 					{
 						CWACThreadArg *argPtrDataThread;
-						CW_CREATE_OBJECT_ERR(argPtrDataThread, CWACThreadArg, { CWLog("Out Of Memory"); return; });
+						CW_CREATE_OBJECT_ERR(argPtrDataThread, CWACThreadArg, { CWLog("Out Of Memory"); return NULL; });
 						argPtrDataThread->index = i;
 						argPtrDataThread->sock = sock;
 						argPtrDataThread->interfaceIndex = 0;
@@ -1233,15 +1233,14 @@ CW_THREAD_RETURN_TYPE CWGenericWTPDataHandshake(void *arg) {
 	
 	genericHandshakeThreadPtr argInputThread = (genericHandshakeThreadPtr) arg;
 	CWWTPManager *wtpPtr = NULL;
-	struct sockaddr_in *tmpAdd;
 	CWSecuritySession sessionDataGeneric;
 	unsigned short int elemLen, elemType;
-	int pathMTU, readBytes, countPacketDataList, fragments, i;
+	int pathMTU, readBytes, countPacketDataList, i;
 	CWBool dataFlag = CW_TRUE;
 
 	char buf[CW_BUFFER_SIZE];
-	char * pData, * valSessionIDPtr;
-	CWProtocolMessage msg, msgDataChannel;
+	char * valSessionIDPtr;
+	CWProtocolMessage msgDataChannel;
 	CWProtocolTransportHeaderValues values;
 	CWSocket dataSocket;
 	int indexTmpThread;
@@ -1348,7 +1347,7 @@ CW_THREAD_RETURN_TYPE CWGenericWTPDataHandshake(void *arg) {
 					/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 			
 			
-					//Termina handshake e termina thread
+					//Terminate handshake and Terminate thread
 				}
 				break;
 			}
@@ -1363,19 +1362,18 @@ CW_THREAD_RETURN_TYPE CWGenericWTPDataHandshake(void *arg) {
 			struct sockaddr_in *tmpAdd1 = (struct sockaddr_in *) &(argInputThread->addressWTPPtr);
 			struct sockaddr_in *tmpAdd2 = (struct sockaddr_in *) &(listGenericThreadDTLSData[indexTmpThread]->addressWTPPtr);
 				
-			//CWLog("++++ Free prima di terminare il thread, NUOVO WTP %s:%d, CORRENTE WTP: %s:%d", inet_ntoa(tmpAdd1->sin_addr), ntohs(tmpAdd1->sin_port), inet_ntoa(tmpAdd2->sin_addr), ntohs(tmpAdd2->sin_port));
+			CWLog("++++ Free before terminating the thread, new WTP %s:%d, current WTP: %s:%d", inet_ntoa(tmpAdd1->sin_addr), ntohs(tmpAdd1->sin_port), inet_ntoa(tmpAdd2->sin_addr), ntohs(tmpAdd2->sin_port));
 
 			if(
 				(!sock_cmp_addr((struct sockaddr*)&(argInputThread->addressWTPPtr), (struct sockaddr*)&(listGenericThreadDTLSData[indexTmpThread]->addressWTPPtr),sizeof(CWNetworkLev4Address))) &&
 				(!sock_cmp_port((struct sockaddr*)&(argInputThread->addressWTPPtr), (struct sockaddr*)&(listGenericThreadDTLSData[indexTmpThread]->addressWTPPtr), sizeof(CWNetworkLev4Address)))
 			)
 			{
-			//	CWLog("++++ Trovato e faccio FREE della struttura numero %d", indexTmpThread);
+			//	CWLog("++++ Found and I make free of the number structure %d", indexTmpThread);
 				free(listGenericThreadDTLSData[indexTmpThread]);
 				listGenericThreadDTLSData[indexTmpThread]=NULL;
 				
-				//CW_FREE_OBJECT(tmpGenericThreadList);
-			//	CWLog("++++ Free Thread Generico");
+			//	CWLog("++++ Free Generic Thread");
 				break;
 			}
 		}

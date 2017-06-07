@@ -37,8 +37,6 @@
  ************************************************************************************************/
 
 #include "CWAC.h"
-#include "CWVendorPayloads.h"
-#include "CWFreqPayloads.h"
 
 #ifdef DMALLOC
 #include "../dmalloc-5.5.0/dmalloc.h"
@@ -142,33 +140,13 @@ CWBool ACEnterRun(int WTPIndex, CWProtocolMessage *msgPtr, CWBool dataFlag) {
 	CWBool toSend= CW_FALSE, timerSet = CW_TRUE;
 	CWControlHeaderValues controlVal;
 	CWProtocolMessage* messages =NULL;
-	int messagesCount=0, k=0;
+	int messagesCount=0;
 	unsigned char StationMacAddr[MAC_ADDR_LEN];
-	unsigned char BSSID[MAC_ADDR_LEN];
 	char string[10];
 	char socketctl_path_name[50];
 	char socketserv_path_name[50];
 	int msglen = msgPtr->offset;
 	
-	int offsetFrameReceived;
-			short int frameControl;
-			char * frameResponse=NULL;
-			int frameRespLen=0, i=0;
-			CWProtocolMessage *completeMsgPtr = NULL;
-			CWProtocolMessage * msgFrame;
-			int fragmentsNum=0, dataSocket=0;
-			CWNetworkLev4Address address;
-			int offsetFrame8023=0;
-			
-			unsigned char frame8023[CW_BUFFER_SIZE];
-				int frame8023len=0;
-				nodeAVL* tmpNode=NULL;
-				int write_bytes;
-				int indexWTP;
-				int indexRadio=0, indexWlan=0, stop=0;
-				unsigned char * dataFrameBuffer;
-				int offsetDataFrame=0;
-				
 	msgPtr->offset = 0;
 	if(dataFlag){
 		/* We have received a Data Message... now just log this event and do actions by the dataType */
@@ -181,8 +159,6 @@ CWBool ACEnterRun(int WTPIndex, CWProtocolMessage *msgPtr, CWBool dataFlag) {
 			memset(StationMacAddr, 0, MAC_ADDR_LEN);
 			memcpy(StationMacAddr, msgPtr->msg+SOURCE_ADDR_START, MAC_ADDR_LEN);
 		
-			int seqNum = CWGetSeqNum();
-
 			CWLog("CW_DATA_MSG_FRAME_TYPE. I don't do anything?");
 		}
 		else if(msgPtr->data_msgType == CW_DATA_MSG_KEEP_ALIVE_TYPE){
@@ -192,10 +168,12 @@ CWBool ACEnterRun(int WTPIndex, CWProtocolMessage *msgPtr, CWBool dataFlag) {
 			CWProtocolMessage sessionIDmsgElem;
 			int fragmentsNum = 0;
 			int i;
-			int dataSocket=0;
 			unsigned short int elemType = 0;
 			unsigned short int elemLen = 0;
+#ifndef CW_DTLS_DATA_CHANNEL
 			CWNetworkLev4Address address;
+			int dataSocket=0;
+#endif
 
 			CWParseFormatMsgElem(msgPtr, &elemType, &elemLen);
 			valPtr = CWParseSessionID(msgPtr, elemLen);
@@ -288,74 +266,6 @@ CWBool ACEnterRun(int WTPIndex, CWProtocolMessage *msgPtr, CWBool dataFlag) {
 			 *				statistics informations.					*
 			 ************************************************************/
 			
-			if( msgPtr->data_msgType == CW_DATA_MSG_FREQ_STATS_TYPE ) {
-				
-				int cells; /* How many cell are heard */
-                int isAck;
-				char * freqPayload; 
-				int socketIndex, indexToSend = htonl(WTPIndex);
-				
-				int sizeofAckInfoUnit = CW_FREQ_ACK_SIZE;
-				int sizeofFreqInfoUnit = CW_FREQ_CELL_INFO_PAYLOAD_SIZE;
-				int sizeOfPayload = 0, payload_offset = 0;
-				
-				/*-----------------------------------------------------------------------------------------------
-				 *	Payload Management ( infos for frequency application) :
-				 *		Ack       Structure : |  WTPIndex  |   Ack Value  | 
-				 *      Freq Info Structure : |  WTPIndex  |  Number of cells  |  Frequecies Info Payload | 
-				 *-----------------------------------------------------------------------------------------------*/
-				
-                memcpy(&isAck, msgPtr->msg, sizeof(int));
-
-				isAck = ntohl(isAck);
-				
-                if ( isAck == 0 ) { /* isnt an ack message */
-					memcpy(&cells, msgPtr->msg+sizeof(int), sizeof(int));
-					cells = ntohl(cells);
-					sizeOfPayload = ( cells * sizeofFreqInfoUnit) + (2*sizeof(int)); 
-				}
-				else {
-					sizeOfPayload = sizeofAckInfoUnit;
-				}
-				
-                if ( ( freqPayload = malloc(sizeOfPayload) ) != NULL ) {
-					
-					memset(freqPayload, 0, sizeOfPayload);
-					memcpy(freqPayload, &indexToSend, sizeof(int));
-					payload_offset += sizeof(int);
-					
-					if ( isAck == 0 ) {
-						memcpy(freqPayload+payload_offset, msgPtr->msg+sizeof(int), sizeOfPayload-payload_offset);
-					}
-					else {
-						memcpy(freqPayload+payload_offset, msgPtr->msg+sizeof(int), sizeOfPayload-payload_offset);
-					}
-					
-					socketIndex = gWTPs[WTPIndex].applicationIndex;	
-					
-					/****************************************************
-					 *		Forward payload to correct application 		*
-					 ****************************************************/
-					
-					if(!CWErr(CWThreadMutexLock(&appsManager.socketMutex[socketIndex]))) {
-						CWLog("[ACrunState]:: Error locking socket Application Mutex");
-						free(freqPayload);
-						return CW_FALSE;
-					}
-					
-					if ( Writen(appsManager.appSocket[socketIndex], freqPayload, sizeOfPayload)  < 0 ) {
-                      CWThreadMutexUnlock(&appsManager.socketMutex[socketIndex]);
-                      free(freqPayload);
-                      CWLog("[ACrunState]:: Error writing Message To Application");
-                      return CW_FALSE;
-					}
-					
-					CWThreadMutexUnlock(&appsManager.socketMutex[socketIndex]);
-					free(freqPayload);
-				}
-				else
-					 CWLog("[ACrunState]:: Malloc error (payload to frequency application");
-			}
 			
 
 		  if(msgPtr->data_msgType == CW_DATA_MSG_STATS_TYPE)
@@ -716,46 +626,6 @@ CWBool CWParseConfigurationUpdateResponseMessage(CWProtocolMessage* msgPtr,
 			case CW_MSG_ELEMENT_RESULT_CODE_CW_TYPE:
 				*resultCode=CWProtocolRetrieve32(msgPtr);
 				break;	
-
-			/*Update 2009:
-				Added case to implement conf update response with payload*/
-			case CW_MSG_ELEMENT_RESULT_CODE_CW_TYPE_WITH_PAYLOAD:
-				{
-				int payloadSize = 0;
-				CW_CREATE_OBJECT_ERR(*vendValues, CWProtocolVendorSpecificValues, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-
-				*resultCode=CWProtocolRetrieve32(msgPtr);
-
-				if (CWProtocolRetrieve16(msgPtr) != CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_CW_TYPE)
-					/*For now, we only have UCI payloads, so we will accept only vendor payloads for protocol data*/
-						return CWErrorRaise(CW_ERROR_INVALID_FORMAT, "Unrecognized Message Element in Configuration Update Response");
-
-				(*vendValues)->vendorPayloadType = CWProtocolRetrieve16(msgPtr);
-
-				switch ((*vendValues)->vendorPayloadType) {
-					case CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_UCI:
-						payloadSize = CWProtocolRetrieve32(msgPtr);
-						if (payloadSize != 0) {
-							(*vendValues)->payload = (void *) CWProtocolRetrieveStr(msgPtr, payloadSize);
-						} else 
-							(*vendValues)->payload = NULL;
-						break;
-					case CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_WUM:
-						payloadSize = CWProtocolRetrieve32(msgPtr);
-						
-						if (payloadSize <= 0) {
-							/* Payload can't be zero here,
-							 * at least the message type must be specified */
-							return CWErrorRaise(CW_ERROR_INVALID_FORMAT, "Unrecognized Message Element in Configuration Update Response");
-						} 
-						(*vendValues)->payload = (void *) CWProtocolRetrieveRawBytes(msgPtr, payloadSize);
-						break;
-					default:
-						return CWErrorRaise(CW_ERROR_INVALID_FORMAT, "Unrecognized Message Element in Configuration Update Response");
-					break;	
-				}
-				}
-				break;	
 			default:
 				return CWErrorRaise(CW_ERROR_INVALID_FORMAT, "Unrecognized Message Element in Configuration Update Response");
 				break;	
@@ -845,12 +715,12 @@ CWBool CWParseStationConfigurationResponseMessage(CWProtocolMessage* msgPtr, int
 CWBool CWSaveConfigurationUpdateResponseMessage(CWProtocolResultCode resultCode,
 						int WTPIndex,
 						CWProtocolVendorSpecificValues* vendValues) {
-	char *wumPayloadBytes = NULL;
 	int closeWTPManager = CW_FALSE;
 
 	if (vendValues != NULL) {
 		char * responseBuffer; 
 		int socketIndex, payloadSize, headerSize, netWTPIndex, netresultCode, netpayloadSize;
+		payloadSize = 0;
 
 
 		/********************************
@@ -870,12 +740,6 @@ CWBool CWSaveConfigurationUpdateResponseMessage(CWProtocolResultCode resultCode,
 			netpayloadSize = htonl(payloadSize);
 			memcpy(responseBuffer+(2*sizeof(int)), &netpayloadSize, sizeof(int));
 			
-			if (payloadSize > 0) {
-				memcpy(responseBuffer+headerSize, (char *) vendValues->payload, payloadSize);
-				if (vendValues->vendorPayloadType == CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_UCI) 
-					((char *)vendValues->payload)[payloadSize] = '\0';
-			}
-
 
 			socketIndex = gWTPs[WTPIndex].applicationIndex;	
 
@@ -1131,18 +995,8 @@ CWBool CWSaveWTPEventRequestMessage(CWProtocolWTPEventRequestValues *WTPEventReq
 					(WTPProtocolManager->radiosInfo).radiosInfo[k].wirelessLinkFramesPerSec = (WTPEventRequest->WTPOperationalStatistics[i]).wirelessLinkFramesPerSec;
 				}
 			}
-			/*if(!found)
-			{
-				for(k=0; k<(WTPProtocolManager->radiosInfo).radioCount; k++)
-				{
-					if((WTPProtocolManager->radiosInfo).radiosInfo[k].radioID == UNUSED_RADIO_ID); 
-					{
-						(WTPProtocolManager->radiosInfo).radiosInfo[k].radioID = (WTPEventRequest->WTPOperationalStatistics[i]).radioID;
-						(WTPProtocolManager->radiosInfo).radiosInfo[k].TxQueueLevel = (WTPEventRequest->WTPOperationalStatistics[i]).TxQueueLevel;
-						(WTPProtocolManager->radiosInfo).radiosInfo[k].wirelessLinkFramesPerSec = (WTPEventRequest->WTPOperationalStatistics[i]).wirelessLinkFramesPerSec;
-					}
-				}	
-			}*/
+
+			found = found;
 		}
 	}
 
@@ -1161,17 +1015,7 @@ CWBool CWSaveWTPEventRequestMessage(CWProtocolWTPEventRequestValues *WTPEventReq
 					(WTPProtocolManager->radiosInfo).radiosInfo[k].statistics = (WTPEventRequest->WTPRadioStatistics[i]).WTPRadioStatistics;
 				}
 			}
-			/*if(!found)
-			{
-				for(k=0; k<(WTPProtocolManager->radiosInfo).radioCount; k++) 
-				{
-					if((WTPProtocolManager->radiosInfo).radiosInfo[k].radioID == UNUSED_RADIO_ID);
-					{
-						(WTPProtocolManager->radiosInfo).radiosInfo[k].radioID = (WTPEventRequest->WTPOperationalStatistics[i]).radioID;
-						(WTPProtocolManager->radiosInfo).radiosInfo[k].statistics = (WTPEventRequest->WTPRadioStatistics[i]).WTPRadioStatistics;
-					}
-				}	
-			}*/
+			found = found;
 		}
 	}
 	/*
@@ -1186,12 +1030,10 @@ CWBool CWSaveWTPEventRequestMessage(CWProtocolWTPEventRequestValues *WTPEventReq
 	//Elena Agostini - 11/2014: Delete Station MsgElem
 	if(WTPEventRequest->WTPStaDeleteInfo != NULL)
 	{
-		int heightAVL = -1;
 				
 		if(WTPEventRequest->WTPStaDeleteInfo->staAddr == NULL)
 			return CW_FALSE;
 
-		nodeAVL * tmpRoot;
 		//---- Delete AVL node (per ora solo per STA addr)
 		CWThreadMutexLock(&mutexAvlTree);
 		avlTree = AVLdeleteNode(avlTree, WTPEventRequest->WTPStaDeleteInfo->staAddr, WTPEventRequest->WTPStaDeleteInfo->radioID);
@@ -1472,30 +1314,22 @@ CWBool CWAssembleConfigurationUpdateRequest(CWProtocolMessage **messagesPtr,
 	CWLog("Assembling Configuration Update Request...");
 
 	switch (msgElement) {
-	case CONFIG_UPDATE_REQ_QOS_ELEMENT_TYPE:
-	  {
-		break;
-	  }
-	case CONFIG_UPDATE_REQ_OFDM_ELEMENT_TYPE:
-	  {
-		break;
-	  }
-	case CONFIG_UPDATE_REQ_VENDOR_UCI_ELEMENT_TYPE:
-	  {
-		CWLog("Assembling UCI Conf Update Request");
-		if(!CWProtocolAssembleConfigurationUpdateRequest(&msgElems, &msgElemCount, CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_UCI)) {
-		  return CW_FALSE;
-		}
-		break;
-	  }
-	case CONFIG_UPDATE_REQ_VENDOR_WUM_ELEMENT_TYPE:
-	 {
-                CWLog("Assembling WUM Conf Update Request");
-                if(!CWProtocolAssembleConfigurationUpdateRequest(&msgElems, &msgElemCount, CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_WUM)) {
-                  return CW_FALSE;
-                }
-                break;
-         }
+		case CONFIG_UPDATE_REQ_QOS_ELEMENT_TYPE:
+			{
+				break;
+			}
+		case CONFIG_UPDATE_REQ_OFDM_ELEMENT_TYPE:
+			{
+				break;
+			}
+		case CONFIG_UPDATE_REQ_VENDOR_UCI_ELEMENT_TYPE:
+			{
+				break;
+			}
+		case CONFIG_UPDATE_REQ_VENDOR_WUM_ELEMENT_TYPE:
+			{
+				break;
+			}
 	}	  
 
 	if(!(CWAssembleMessage(messagesPtr,
@@ -1623,9 +1457,9 @@ CWBool CWRestartNeighborDeadTimerForEcho(int WTPIndex) {
 CW_THREAD_RETURN_TYPE CWACReceiveDataChannel(void *arg) {
 
 	int 		i = ((CWACThreadArg*)arg)->index;
-	CWSocket 	sock = ((CWACThreadArg*)arg)->sock;
+	//CWSocket 	sock = ((CWACThreadArg*)arg)->sock;
 	
-	int dataSocket=0, countPacketDataList=0, readBytes, pathMTU, indexLocal=0;
+	int dataSocket=0, countPacketDataList=0, readBytes, indexLocal=0;
 	CWNetworkLev4Address address;
 	CWBool sessionDataActiveLocal = CW_FALSE;
 	char* pData;

@@ -43,14 +43,7 @@
 #include "../dmalloc-5.5.0/dmalloc.h"
 #endif
 
-#ifdef SOFTMAC
-CW_THREAD_RETURN_TYPE CWWTPThread_read_data_from_hostapd(void *arg);
-#endif
-
 CW_THREAD_RETURN_TYPE CWWTPReceiveFrame(void *arg);
-CW_THREAD_RETURN_TYPE CWWTPReceiveStats(void *arg);
-CW_THREAD_RETURN_TYPE CWWTPReceiveFreqStats(void *arg);
-CW_THREAD_RETURN_TYPE gogo(void *arg);
 
 int 	gEnabledLog;
 int 	gMaxLogFileSize;
@@ -218,6 +211,7 @@ CWBool CWReceiveDataMessage(CWProtocolMessage *msgPtr) {
 		pkt_buffer = NULL;
 		
 #ifdef CW_DTLS_DATA_CHANNEL
+		pkt_buffer = pkt_buffer;
 	if(!CWSecurityReceive(gWTPSessionData, buf, CW_BUFFER_SIZE, &readBytes)) {return CW_FALSE;}
 #else
 		CWLockSafeList(gPacketReceiveDataList);
@@ -578,9 +572,8 @@ cw_failure:
 	return CW_FALSE;
 }
 
-int main (int argc, const char * argv[]) {
-	
-
+int main (int argc, const char * argv[])
+{
 	/* Daemon Mode */
 
 	pid_t pid;
@@ -606,14 +599,6 @@ int main (int argc, const char * argv[]) {
 	//Elena to move line 611
 	//CWLogInitFile(WTP_LOG_FILE_NAME);
 
-//Elena: This is useless
-/*
-#ifndef CW_SINGLE_THREAD
-	CWDebugLog("Use Threads");
-#else
-	CWDebugLog("Don't Use Threads");
-#endif
-*/
 	CWErrorHandlingInitLib();
 	if(!CWParseSettingsFile()){
 		//Elena: fprintf
@@ -689,34 +674,12 @@ int main (int argc, const char * argv[]) {
 		exit(1);
 	}
 
-#ifdef SPLIT_MAC
-	//We need monitor interface only in SPLIT_MAC mode with tunnel
-	CWThread thread_receiveFrame;
-	if(!CWErr(CWCreateThread(&thread_receiveFrame, CWWTPReceiveFrame, NULL))) {
-		CWLog("Error starting Thread that receive binding frame");
-		exit(1);
-	}
-#endif
 
-/*
-	CWThread thread_receiveStats;
-	if(!CWErr(CWCreateThread(&thread_receiveStats, CWWTPReceiveStats, NULL))) {
-		CWLog("Error starting Thread that receive stats on monitoring interface");
-		exit(1);
-	}
-*/
 	/****************************************
 	 * 2009 Update:							*
 	 *				Spawn Frequency Stats	*
 	 *				Receiver Thread			*
 	 ****************************************/
-/*
-	CWThread thread_receiveFreqStats;
-	if(!CWErr(CWCreateThread(&thread_receiveFreqStats, CWWTPReceiveFreqStats, NULL))) {
-		CWLog("Error starting Thread that receive frequency stats on monitoring interface");
-		exit(1);
-	}
-	*/
 
 	/* if AC address is given jump Discovery and use this address for Joining */
 	if(gWTPForceACAddress != NULL)	nextState = CW_ENTER_JOIN;
@@ -824,15 +787,11 @@ void CWWTPDestroy() {
 	
 	timer_destroy();
 //Elena
-#ifdef SPLIT_MAC
-	close(rawInjectSocket);
-#endif
 	CW_FREE_OBJECT(gCWACList);
 	CW_FREE_OBJECT(gRadiosInfo.radiosInfo);
 }
 
 CWBool CWWTPInitConfiguration() {
-	int i, err;
 
 	//Generate 128-bit Session ID,
 	initWTPSessionID(gWTPSessionID);

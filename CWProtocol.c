@@ -37,7 +37,6 @@
 
 
 #include "CWCommon.h"
-#include "CWVendorPayloads.h"
 pthread_mutex_t gRADIO_MAC_mutex;
 
 #ifdef DMALLOC
@@ -219,7 +218,7 @@ CWBool CWAssembleTransportHeader(CWProtocolMessage *transportHdrPtr, CWProtocolT
 			CWSetField32(val,
 					 CW_TRANSPORT_HEADER_HLEN_START,
 					 CW_TRANSPORT_HEADER_HLEN_LEN,
-					 2 + 2);
+					 (2 + 2));
 	else
 			CWSetField32(val,
 					 CW_TRANSPORT_HEADER_HLEN_START,
@@ -239,7 +238,7 @@ CWBool CWAssembleTransportHeader(CWProtocolMessage *transportHdrPtr, CWProtocolT
 	CWSetField32(val,
 		 CW_TRANSPORT_HEADER_T_START,
 		 CW_TRANSPORT_HEADER_T_LEN,
-		 valuesPtr->type == 1 ? 1:0);
+		 (valuesPtr->type == 1 ? 1:0));
 	
 	CWSetField32(val,
 		     CW_TRANSPORT_HEADER_F_START,
@@ -784,6 +783,7 @@ CWBool CWParseTransportHeader(CWProtocolMessage *msgPtr, CWProtocolTransportHead
 		return CWErrorRaise(CW_ERROR_INVALID_FORMAT, "Wrong Protocol Version");
 		
 	version = CWGetField32(val, CW_TRANSPORT_HEADER_VERSION_START, CW_TRANSPORT_HEADER_VERSION_LEN);
+	version = version;
 //	CWDebugLog("VERSION: %d", version);
 	
 	valuesPtr->payloadType = CWGetField32(val, CW_TRANSPORT_HEADER_TYPE_START, CW_TRANSPORT_HEADER_TYPE_LEN);
@@ -794,6 +794,7 @@ CWBool CWParseTransportHeader(CWProtocolMessage *msgPtr, CWProtocolTransportHead
 //	CWDebugLog("HLEN: %d", transport4BytesLen);	
 
 	rid = CWGetField32(val, CW_TRANSPORT_HEADER_RID_START, CW_TRANSPORT_HEADER_RID_LEN);
+	rid = rid;
 //	CWDebugLog("RID: %d", rid);	
 	
 //	CWDebugLog("WBID: %d", CWGetField32(val, CW_TRANSPORT_HEADER_WBID_START, CW_TRANSPORT_HEADER_WBID_LEN));
@@ -835,6 +836,7 @@ CWBool CWParseTransportHeader(CWProtocolMessage *msgPtr, CWProtocolTransportHead
 			 * Added Message Length Element
 			 */
 			KeepAliveLenght = CWProtocolRetrieve16(msgPtr);
+			KeepAliveLenght = KeepAliveLenght;
 		}else if (valuesPtr->type==0){	//IEEE 802.3 frame
 			CWLog("802.3 frame");
 			if (!optionalWireless){
@@ -890,6 +892,7 @@ CWBool CWParseControlHeader(CWProtocolMessage *msgPtr, CWControlHeaderValues *va
 //	CWDebugLog("MESSAGE_ELEMENT_LENGTH: %u", valPtr->msgElemsLen );
 	
 	flags=CWProtocolRetrieve8(msgPtr);
+	flags=flags;
 //	CWDebugLog("FLAGS: %u",	flags);
 	
 //	valPtr->timestamp = CWProtocolRetrieve32(msgPtr);

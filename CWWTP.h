@@ -43,8 +43,6 @@
 /*  *******************___INCLUDE___*******************  */
 
 #include "CWCommon.h"
-//Elena Agostini - 07/2014
-//#include "NL80211.h"
 
 
 /*______________________________________________________*/
@@ -84,22 +82,6 @@ extern int * gPhyInterfaceIndex;
 /*
  * Elena Agostini - 02/2014
  *
- * QoS Static Values variables
- */
-extern int qosStaticFreq;
-extern int qosStaticBitRate;
-extern int qosStaticFrag;
-extern int qosStaticTxPower;
-extern int qosStaticCwMin;
-extern int qosStaticCwMax;
-extern int qosStaticAifs;
-extern int qosStaticWmeCwMin;
-extern int qosStaticWmeCwMax;
-extern int qosStaticWmeAifsn;
-
-/*
- * Elena Agostini - 02/2014
- *
  * ECN Support Msg Elem MUST be included in Join Request/Response Messages
  */
 extern int gWTPECNSupport;
@@ -132,9 +114,8 @@ extern WTPRebootStatisticsInfo gWTPRebootStatistics;
 extern CWWTPRadiosInfo gRadiosInfo;
 extern CWSecurityContext gWTPSecurityContext;
 extern CWSecuritySession gWTPSession;
+
 /*
- * Elena Agostini - 03/2014
- * 
  * DTLS Data Session WTP
  */
 extern CWSecurityContext gWTPSecurityContextData;
@@ -147,27 +128,25 @@ extern CWSafeList gFrameList;
 extern CWThreadCondition gInterfaceWait;
 extern CWThreadMutex gInterfaceMutex;
 
-//Elena Agostini: Mutex and Cond dedicated to Data Packet List
+//Mutex and Cond dedicated to Data Packet List
 extern CWSafeList gPacketReceiveDataList;
 extern CWThreadCondition gInterfaceWaitData;
 extern CWThreadMutex gInterfaceMutexData;
 
 /*
- * Elena Agostini - 02/2014: OpenSSL params variables
+ * OpenSSL params variables
  */
 extern char *gWTPCertificate;
 extern char *gWTPKeyfile;
 extern char *gWTPPassword;
 
 /*
- * Elena Agostini - 02/2014
  * Port number params config.wtp
  */
 extern int WTP_PORT_CONTROL;
 extern int WTP_PORT_DATA;
 
 #define MAC_ADDR_LEN 6
-
 
 extern int wtpInRunState;
 
@@ -180,7 +159,6 @@ CWBool CWWTPInitConfiguration();
 void CWWTPResetRadioStatistics(WTPRadioStatisticsInfo *radioStatistics);
 CWBool CWReceiveMessage(CWProtocolMessage *msgPtr);
 /*
- * Elena Agostini - 03/2014
  * DTLS Data Session WTP
  */
 CWBool CWReceiveDataMessage(CWProtocolMessage *msgPtr);
@@ -203,8 +181,7 @@ CWBool CWAssembleWTPEventRequest(CWProtocolMessage **messagesPtr,
 				 int *fragmentsNumPtr,
 				 int PMTU,
 				 int seqNum,
-				 CWList msgElemList,
-				 CWMsgElemDataDeleteStation * infoDeleteStation);
+				 CWList msgElemList);
 
 CW_THREAD_RETURN_TYPE CWWTPReceiveDtlsPacket(void *arg);
 CW_THREAD_RETURN_TYPE CWWTPReceiveDataPacket(void *arg);
@@ -240,9 +217,6 @@ CWBool CWUpdatePendingMsgBox(CWPendingRequestMessage *pendingRequestMsgs,
 			     CWProtocolMessage *msgElems,
 			     int fragmentsNum);
 			     
-//in WTPDriverInteraction.c
-
-
 /* in WTPDiscoveryState.c */
 CWStateTransition CWWTPEnterDiscovery();
 void CWWTPPickACInterface();
@@ -257,8 +231,6 @@ CWBool CWStartHeartbeatTimer();
 CWBool CWStopHeartbeatTimer();
 
 /*
- * Elena Agostini - 03/2014
- * 
  * DataChannel Dead Timer
  */
 CWBool CWStartDataChannelDeadTimer();
@@ -268,8 +240,6 @@ CWBool CWStartKeepAliveTimer();
 CWBool CWStopKeepAliveTimer();
 
 /*
- * Elena Agostini - 03/2014
- * 
  * Echo Request Timer
  */
 CWBool CWStartEchoRequestTimer();

@@ -81,8 +81,6 @@ CWBool CWParseDiscoveryResponseMessage(char *msg,
  */
 CWStateTransition CWWTPEnterDiscovery() {
 	int i;
-	CWBool j;
-	int ret= -10;
 	
 	CWLog("\n");	
 	CWLog("######### Discovery State #########");
@@ -138,10 +136,8 @@ CWStateTransition CWWTPEnterDiscovery() {
 				
 				CWNetworkGetAddressForHost(gCWACList[i].address, &(gACInfoPtr->preferredAddress));
 				CWUseSockNtop(&(gACInfoPtr->preferredAddress), CWDebugLog(str););
-				j = CWErr(CWNetworkSendUnsafeUnconnected(gWTPSocket,
-									 &(gACInfoPtr->preferredAddress),
-									 (*msgPtr).msg,
-									 (*msgPtr).offset)); 
+				CWBool b = CWErr(CWNetworkSendUnsafeUnconnected(gWTPSocket,&(gACInfoPtr->preferredAddress),(*msgPtr).msg,(*msgPtr).offset));
+				b = b;
 				/* 
 				 * log eventual error and continue
 				 * CWUseSockNtop(&(gACInfoPtr->preferredAddress),

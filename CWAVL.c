@@ -61,6 +61,7 @@ nodeAVL* AVLfindWTPNode(nodeAVL* t, int index)
     else
         return NULL;
 	*/
+	return NULL;
 }
 
 /*
@@ -210,19 +211,23 @@ nodeAVL* AVLinsert(int index, unsigned char * staAddr, unsigned char * BSSID, in
     {
         t->left = AVLinsert(index, staAddr, BSSID, radioID, t->left );
         if( AVLheight( t->left ) - AVLheight( t->right ) == 2 )
-            if( compareEthAddr(staAddr, t->left->staAddr) < 0 )
+		{
+			if( compareEthAddr(staAddr, t->left->staAddr) < 0 )
                 t = AVLsingle_rotate_with_left( t );
             else
                 t = AVLdouble_rotate_with_left( t );
+        }
     }
     else if(compareEthAddr(staAddr, t->staAddr) > 0)
     {
         t->right = AVLinsert(index, staAddr, BSSID, radioID, t->right );
         if( AVLheight( t->right ) - AVLheight( t->left ) == 2 )
+		{
             if( compareEthAddr(staAddr, t->right->staAddr) > 0)
                 t = AVLsingle_rotate_with_right( t );
             else
                 t = AVLdouble_rotate_with_right( t );
+        }
     }
     /* Else X is in the tree already; we'll do nothing */
 

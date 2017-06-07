@@ -168,7 +168,6 @@ CWBool CWParseConfigureResponseMessage (char *msg,
 
 	CWControlHeaderValues 	controlVal;
 	CWProtocolMessage 	completeMsg;
-	CWBool 			bindingMsgElemFound = CW_FALSE;
 	int 			offsetTillMessages;
 	int 			i=0;
 	int 			j=0;
@@ -216,7 +215,6 @@ CWBool CWParseConfigureResponseMessage (char *msg,
 	
 		if(CWBindingCheckType(type))
 		{
-			bindingMsgElemFound=CW_TRUE;
 			completeMsg.offset += len;
 			continue;	
 		}

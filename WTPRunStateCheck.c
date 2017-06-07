@@ -116,7 +116,7 @@ CWBool CWWTPCheckForBindingFrame()
 	return CW_TRUE;
 }
 
-CWBool CWWTPCheckForWTPEventRequest(int eventType, CWMsgElemDataDeleteStation * infoDeleteStation){
+CWBool CWWTPCheckForWTPEventRequest(int eventType){
 
 	CWLog("\n");
 	CWLog("#________ WTP Event Request Message (Run) ________#");
@@ -140,7 +140,7 @@ CWBool CWWTPCheckForWTPEventRequest(int eventType, CWMsgElemDataDeleteStation * 
 	((CWMsgElemData*)(msgElemList->data))->type = eventType;//CW_MSG_ELEMENT_CW_DECRYPT_ER_REPORT_CW_TYPE;
 	((CWMsgElemData*)(msgElemList->data))->value = 0;
 
-	if(!CWAssembleWTPEventRequest(&messages, &fragmentsNum, gWTPPathMTU, seqNum, msgElemList, infoDeleteStation)){
+	if(!CWAssembleWTPEventRequest(&messages, &fragmentsNum, gWTPPathMTU, seqNum, msgElemList)){
 		int i;
 		if(messages)
 			for(i = 0; i < fragmentsNum; i++) {

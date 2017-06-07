@@ -555,13 +555,7 @@ CWBool CWNetworkUnsafeMultiHomed(CWMultiHomedSocket *sockPtr,
 	fd_set fset;
 	int max = 0, i;
 	CWNetworkLev4Address addr;
-	CWNetworkLev4Address address;
  	
-	int k;
-	int fragmentsNum = 0;
-	CWProtocolMessage *completeMsgPtr = NULL;
-	CWProtocolMessage* frame=NULL;
-	int dataSocket=0;
 	int readBytes;
 	int flags = ((peekRead != CW_FALSE) ? MSG_PEEK : 0);	
 	char buf[CW_BUFFER_SIZE];
@@ -606,7 +600,6 @@ CWBool CWNetworkUnsafeMultiHomed(CWMultiHomedSocket *sockPtr,
 			
 			CWLog("Receive CONTROL on interface %d sock %d", i, sockPtr->interfaces[i].sock);
 
-			int readBytes;
 
 			CWUseSockNtop(&(sockPtr->interfaces[i].addr),
 				CWDebugLog("Ready on %s", str);
@@ -630,7 +623,6 @@ CWBool CWNetworkUnsafeMultiHomed(CWMultiHomedSocket *sockPtr,
 	  
 	  
 		if(FD_ISSET(sockPtr->interfaces[i].dataSock, &fset)) {						//Todd: Bridge 802.3 packets of WTPs into AC
-			int readBytes;
 
 
 			//CWLog("## Pacchetto DATI interfaccia %d sock %d*********", i, sockPtr->interfaces[i].dataSock);

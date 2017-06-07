@@ -142,8 +142,6 @@ CWBool CWParseConfigureRequestMessage(char *msg,
 	CWControlHeaderValues controlVal;
 	int i,j;
 	int offsetTillMessages;
-	char * tmpSuppRates;
-	int radioID, rateLen, indexRadio;
 	
 	CWProtocolMessage completeMsg;
 	

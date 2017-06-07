@@ -66,7 +66,6 @@ CWBool CWAssembleDiscoveryResponse(CWProtocolMessage **messagesPtr, int seqNum) 
 	CWProtocolMessage *msgElemsBinding= NULL;
 	int msgElemBindingCount=0;
 	int fragmentsNum;
-	int indexWTPRadio=0;
 	
 	int k = -1;
 	if(messagesPtr == NULL) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
@@ -113,8 +112,6 @@ CWBool CWParseDiscoveryRequestMessage(char *msg,
 						
 	CWControlHeaderValues controlVal;
 	CWProtocolTransportHeaderValues transportVal;
-	char RadioInfoABGN;
-	int numPhyInterface;
 	int offsetTillMessages;
 		
 	CWProtocolMessage completeMsg;

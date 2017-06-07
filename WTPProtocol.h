@@ -128,7 +128,6 @@ CWBool CWAssembleMsgElemWTPOperationalStatistics(CWProtocolMessage *msgPtr,int r
 CWBool CWAssembleMsgElemWTPRadioStatistics(CWProtocolMessage *msgPtr,int radio);	//43
 CWBool CWAssembleMsgElemWTPRebootStatistics(CWProtocolMessage *msgPtr);			//44
 //Elena Agostini - 11/2014: Delete Station Msg Elem
-CWBool CWAssembleMsgElemWTPDeleteStation(CWProtocolMessage *msgPtr, CWMsgElemDataDeleteStation * infoDeleteStation);
 //Elena Agostini - 02/2014: ECN Support Msg Elem MUST be included in Join Request/Response Messages
 CWBool CWAssembleMsgElemECNSupport(CWProtocolMessage *msgPtr);
 //CWBool CWAssembleMsgElemWTPStaticIPInfo(CWProtocolMessage *msgPtr);			//45
@@ -138,9 +137,6 @@ CWBool CWAssembleMsgElemECNSupport(CWProtocolMessage *msgPtr);
 CWBool CWParseACDescriptor(CWProtocolMessage *msgPtr, int len, CWACInfoValues *valPtr);					// 1
 CWBool CWParseACIPv4List(CWProtocolMessage *msgPtr, int len, ACIPv4ListValues *valPtr);					// 2
 CWBool CWParseACIPv6List(CWProtocolMessage *msgPtr, int len, ACIPv6ListValues *valPtr);					// 3
-CWBool CWParseAddStation(CWProtocolMessage *msgPtr, int len, int * radioID, char ** address);
-CWBool CWParse80211Station(CWProtocolMessage *msgPtr, int len, int * radioID, short int * assID, char * flags, char ** address, short int * capability, int * wlanID, int * supportedRatesLen, char ** supportedRates);
-CWBool CWParseDeleteStation(CWProtocolMessage *msgPtr, int len, int * radioID, char ** address);								// 18
 CWBool CWParseCWControlIPv4Addresses(CWProtocolMessage *msgPtr, int len, CWProtocolIPv4NetworkInterface *valPtr);	//10 
 CWBool CWParseCWControlIPv6Addresses(CWProtocolMessage *msgPtr, int len, CWProtocolIPv6NetworkInterface *valPtr);	//11 
 CWBool CWParseCWTimers (CWProtocolMessage *msgPtr, int len, CWProtocolConfigureResponseValues *valPtr);			//12 

@@ -139,22 +139,12 @@ __inline__ void CWWTPDestroyVendorInfos(CWWTPVendorInfos *valPtr) {
 __inline__ int CWWTPGetFrameTunnelMode() {
 	//it may be also 802.3_FrameTunnelMode - NativeFrameTunnelMode - All
 	
-#ifdef SPLIT_MAC
-	return CW_NATIVE_BRIDGING;
-#else
 	return CW_LOCAL_BRIDGING;
-#endif
 
 }
 
 __inline__ int CWWTPGetMACType() {
-	
-#ifdef SPLIT_MAC
-	return CW_SPLIT_MAC;
-#else
 	return CW_LOCAL_MAC;
-#endif
-
 }
 
 __inline__ char *CWWTPGetLocation() {

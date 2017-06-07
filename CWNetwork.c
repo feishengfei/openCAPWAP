@@ -74,7 +74,7 @@ CWBool CWNetworkSendUnsafeUnconnected(CWSocket sock,
 	if(buf == NULL || addrPtr == NULL) 
 		return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
 	
-	CWUseSockNtop(addrPtr, NULL;/*CWDebugLog(str);*/);
+	CWUseSockNtop(addrPtr, NULL;CWDebugLog(str););
 
 	while(sendto(sock, buf, len, 0, (struct sockaddr*)addrPtr, CWNetworkGetAddressSize(addrPtr)) < 0) {
 
@@ -209,7 +209,6 @@ CWBool CWNetworkInitSocketClient(CWSocket *sockPtr, CWNetworkLev4Address *addrPt
  */
 CWBool CWNetworkInitSocketClientDataChannel(CWSocket *sockPtr, CWNetworkLev4Address *addrPtr) {
 	
-	int yes = 1;
 #ifdef IPv6
 	struct sockaddr_in6 sockaddr;
 #else
@@ -232,7 +231,7 @@ CWBool CWNetworkInitSocketClientDataChannel(CWSocket *sockPtr, CWNetworkLev4Addr
 #ifdef IPv6
 	sockaddr.sin6_family = (gNetworkPreferredFamily == CW_IPv4) ? AF_INET : AF_INET6;
 #else
-	sockaddr.sin_family == AF_INET;
+	sockaddr.sin_family = AF_INET;
 #endif
 
 	/*
@@ -340,7 +339,6 @@ CWBool CWNetworkInitSocketClientWithPort(CWSocket *sockPtr, CWNetworkLev4Address
 
 CWBool CWNetworkInitSocketClientDataChannelWithPort(CWSocket *sockPtr, CWNetworkLev4Address *addrPtr, int portSocket) {
 	
-	int yes = 1;
 #ifdef IPv6
 	struct sockaddr_in6 sockaddr;
 #else
@@ -363,7 +361,7 @@ CWBool CWNetworkInitSocketClientDataChannelWithPort(CWSocket *sockPtr, CWNetwork
 #ifdef IPv6
 	sockaddr.sin6_family = (gNetworkPreferredFamily == CW_IPv4) ? AF_INET : AF_INET6;
 #else
-	sockaddr.sin_family == AF_INET;
+	sockaddr.sin_family = AF_INET;
 #endif
 
 	/* Elena Agostini - 04/2014 */

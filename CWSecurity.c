@@ -233,6 +233,7 @@ CWBool CWSecurityInitSessionClient(CWSocket 		sock,
 	}
 	
 	i = BIO_ctrl_set_connected(sbio, 1, &peer);
+	i = i;
 	
 	/* BIO_ctrl(sbio, BIO_CTRL_DGRAM_MTU_DISCOVER, 0, NULL); // TO-DO (pass MTU?) */
 	/* 

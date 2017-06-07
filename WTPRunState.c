@@ -43,7 +43,6 @@
 #include <sys/ioctl.h>
 #include <netpacket/packet.h>
 #include "CWWTP.h"
-#include "CWVendorPayloads.h"
 #ifdef DMALLOC
 #include "../dmalloc-5.5.0/dmalloc.h"
 #endif
@@ -52,7 +51,7 @@ CWBool CWWTPManageGenericRunMessage(CWProtocolMessage *msgPtr);
 
 CWBool CWWTPCheckForBindingFrame();
 
-CWBool CWWTPCheckForWTPEventRequest(int eventType, CWMsgElemDataDeleteStation * infoDeleteStation);
+CWBool CWWTPCheckForWTPEventRequest(int eventType);
 CWBool CWParseWTPEventResponseMessage(char *msg,
 				      int len,
 				      int seqNum,
@@ -203,9 +202,8 @@ extern int gRawSock;
 
 CW_THREAD_RETURN_TYPE CWWTPReceiveDataPacket(void *arg) {
 
-	int 			n,readBytes;
+	int 			readBytes;
 	char 			buf[CW_BUFFER_SIZE];
-	struct sockaddr_ll 	rawSockaddr;	
 	CWSocket 		sockDTLS = *(CWSocket *)(arg);
 	CWNetworkLev4Address	addr;
 	char* 			pData;
@@ -272,12 +270,9 @@ manager_data_failure:
  CW_THREAD_RETURN_TYPE CWWTPManageDataPacket(void *arg) {
 	
 	struct timeval tv;	
-	int 			n,readBytes;
-	struct sockaddr_ll 	rawSockaddr;	
 	CWProtocolMessage 	msgPtr;
 	CWBool			gWTPDataChannelLocalFlag = CW_FALSE;
 	CWBool			gWTPExitRunEchoLocal = CW_FALSE;
-	int msg_len;
 	int gWTPThreadDataPacketStateLocal=0;
 	CWBool bReceivePacket;
 	
@@ -366,13 +361,12 @@ manager_data_failure:
 
 			if (msgPtr.data_msgType == CW_DATA_MSG_KEEP_ALIVE_TYPE) {
 
-					char *valPtr=NULL;
 					unsigned short int elemType = 0;
 					unsigned short int elemLen = 0;
 
 					msgPtr.offset=0;	
 					CWParseFormatMsgElem(&msgPtr, &elemType, &elemLen);
-					valPtr = CWParseSessionID(&msgPtr, 16);
+					CWParseSessionID(&msgPtr, 16);
 					
 					/*
 					 * Elena Agostini - 03/2014
@@ -393,7 +387,9 @@ manager_data_failure:
 		}
 	}
 
+#ifdef CW_DTLS_DATA_CHANNEL
 CLEAR_DATA_RUN_STATE:
+#endif
 	
 #ifdef CW_DTLS_DATA_CHANNEL
 	gWTPSessionData = NULL;
@@ -419,8 +415,7 @@ int wtpInRunState=0;
 CWStateTransition CWWTPEnterRun() {
 
 	struct timeval tv;
-	int k, msg_len;
-	int gWTPThreadDataPacketStateLocal=0;
+	int k;
 
 	CWLog("\n");
 	CWLog("######### WTP enters in RUN State #########");
@@ -521,7 +516,6 @@ CWStateTransition CWWTPEnterRun() {
 
 			CWProtocolMessage msg;
 
-			msg_len = msg.offset;
 			msg.msg = NULL;
 			msg.offset = 0;
 
@@ -711,7 +705,6 @@ CWBool CWWTPManageGenericRunMessage(CWProtocolMessage *msgPtr) {
 			 */
 			case CW_MSG_TYPE_VALUE_STATION_CONFIGURATION_REQUEST:
 			{
-				int BSSIndex, STAIndex;
 				char * addressSta;
 				CW_CREATE_ARRAY_CALLOC_ERR(addressSta, ETH_ALEN+1, char, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
 				
@@ -726,23 +719,6 @@ CWBool CWWTPManageGenericRunMessage(CWProtocolMessage *msgPtr) {
 					return CW_FALSE;
 				}
 				CWLog("# _______ Station Configuration Request received _______ #");
-				int typeOp=-1;
-#if 0
-				if(CWParseStationConfigurationRequest((msgPtr->msg)+(msgPtr->offset), len, &BSSIndex, &STAIndex, &typeOp))
-				{
-					if(typeOp == CW_MSG_ELEMENT_ADD_STATION_CW_TYPE)
-					{
-						CWLog("[CW80211] REQUEST Add Station");
-					}
-					
-					if(typeOp == CW_MSG_ELEMENT_DELETE_STATION_CW_TYPE)
-					{
-						CWLog("[CW80211] REQUEST Delete Station");
-					}
-				}
-				else
-					resultCode=CW_PROTOCOL_FAILURE;
-#endif
 				
 				if(!CWAssembleStationConfigurationResponse(&messages, &fragmentsNum, gWTPPathMTU, controlVal.seqNum, resultCode)) 
 					return CW_FALSE;
@@ -1427,8 +1403,7 @@ CWBool CWAssembleWTPEventRequest(CWProtocolMessage **messagesPtr,
 				 int *fragmentsNumPtr,
 				 int PMTU,
 				 int seqNum,
-				 CWList msgElemList,
-				 CWMsgElemDataDeleteStation * infoDeleteStation) {
+				 CWList msgElemList) {
 
 	CWProtocolMessage *msgElems= NULL;
 	int msgElemCount = 0;
@@ -1481,13 +1456,6 @@ CWBool CWAssembleWTPEventRequest(CWProtocolMessage **messagesPtr,
 				break;
 			case CW_MSG_ELEMENT_WTP_REBOOT_STATISTICS_CW_TYPE:
 				if (!(CWAssembleMsgElemWTPRebootStatistics(&(msgElems[++k]))))
-					goto cw_assemble_error;	
-				break;
-			case CW_MSG_ELEMENT_DELETE_STATION_CW_TYPE:
-				if(infoDeleteStation == NULL)
-					return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
-					
-				if (!(CWAssembleMsgElemWTPDeleteStation(&(msgElems[++k]), infoDeleteStation)))
 					goto cw_assemble_error;	
 				break;
 			default:
@@ -1683,10 +1651,7 @@ CWBool CWParseConfigurationUpdateRequest (char *msg,
 					  CWProtocolConfigurationUpdateRequestValues *valuesPtr, 
 					  int *updateRequestType) {
 
-	CWBool bindingMsgElemFound=CW_FALSE;
-	CWBool vendorMsgElemFound=CW_FALSE;
 	CWProtocolMessage completeMsg;
-	unsigned short int GlobalElementType = 0;
 	
 	if(msg == NULL || valuesPtr == NULL)
 		return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
@@ -1708,13 +1673,11 @@ CWBool CWParseConfigurationUpdateRequest (char *msg,
 		
 		CWParseFormatMsgElem(&completeMsg,&elemType,&elemLen);		
 
-		GlobalElementType = elemType;
 
 //		CWLog("Parsing Message Element: %u, elemLen: %u", elemType, elemLen);
 
 		if(CWBindingCheckType(elemType)) {
 
-			bindingMsgElemFound=CW_TRUE;
 			completeMsg.offset += elemLen;
 			continue;	
 		}						

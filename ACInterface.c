@@ -35,7 +35,6 @@
 
 #include "CWAC.h"
 #include "ACAppsProtocol.h"
-#include "CWVendorPayloads.h"
 
 #define LIST_CMD "LIST"
 #define SCAN_CMD "SCAN"
@@ -111,10 +110,6 @@ CW_THREAD_RETURN_TYPE CWManageApplication(void* arg) {
 	int i, nameLength, numActiveWTPs=0, wtpIndex;
     int iTosend, nLtoSend;
 	unsigned char cmd_msg, msg_elem;
-	OFDMControlValues* ofdmValues;
-	CWProtocolVendorSpecificValues* vendorValues;
-	CWVendorUciValues* uciValues;
-	CWVendorWumValues* wumValues;
 		
 	/********************************************************************************
 	 * Write on application socket that connection setting is happened correctly.	*

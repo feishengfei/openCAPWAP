@@ -64,8 +64,6 @@
 #include <sys/file.h>
 #include <netpacket/packet.h>
 #include <net/ethernet.h> 
-/* CAPWAP local headers */
-#include "CWLog.h"
        
 /* *********** NL80211 support ************** */
 #include <stdio.h>
@@ -78,6 +76,10 @@
 #include <stdbool.h>
 #include <endian.h>
 
+#ifdef __APPLE__
+#else
+	#define HAVE_SEM_TIMEDWAIT
+#endif
 
 
 // make sure the types really have the right sizes
@@ -169,7 +171,6 @@ extern char * wtpLogFile;
 #endif
 
 #include "CWStevens.h"
-#include "config.h"
 #include "CWSyslog.h"
 #include "CWErrorHandling.h"
 
