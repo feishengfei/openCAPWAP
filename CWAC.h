@@ -1,42 +1,3 @@
-/************************************************************************************************
- * Copyright (c) 2006-2009 Laboratorio di Sistemi di Elaborazione e Bioingegneria Informatica	*
- *                          Universita' Campus BioMedico - Italy								*
- *																								*
- * This program is free software; you can redistribute it and/or modify it under the terms		*
- * of the GNU General Public License as published by the Free Software Foundation; either		*
- * version 2 of the License, or (at your option) any later version.								*
- *																								*
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY				*
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A				*
- * PARTICULAR PURPOSE. See the GNU General Public License for more details.						*
- *																								*
- * You should have received a copy of the GNU General Public License along with this			*
- * program; if not, write to the:																*
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,							*
- * MA  02111-1307, USA.																			*
- *
- * In addition, as a special exception, the copyright holders give permission to link the  *
- * code of portions of this program with the OpenSSL library under certain conditions as   *
- * described in each individual source file, and distribute linked combinations including  * 
- * the two. You must obey the GNU General Public License in all respects for all of the    *
- * code used other than OpenSSL.  If you modify file(s) with this exception, you may       *
- * extend this exception to your version of the file(s), but you are not obligated to do   *
- * so.  If you do not wish to do so, delete this exception statement from your version.    *
- * If you delete this exception statement from all source files in the program, then also  *
- * delete it here.                                                                         *
- *
- * -------------------------------------------------------------------------------------------- *
- * Project:  Capwap																				*
- *																								*
- * Authors : Ludovico Rossi (ludo@bluepixysw.com)												*  
- *           Del Moro Andrea (andrea_delmoro@libero.it)											*
- *           Giovannini Federica (giovannini.federica@gmail.com)								*
- *           Massimo Vellucci (m.vellucci@unicampus.it)											*
- *           Mauro Bisson (mauro.bis@gmail.com)													*
- *           Daniele De Sanctis (danieledesanctis@gmail.com)									* 
- *	         Antonio Davoli (antonio.davoli@gmail.com)											*
- ************************************************************************************************/
-
 #ifndef __CAPWAP_CWAC_HEADER__
 #define __CAPWAP_CWAC_HEADER__
 
@@ -64,18 +25,6 @@
 /*Definition of socket's path to send data stats */
 #define SOCKET_PATH_AC 				"/tmp/af_unix_ac_client"
 #define SOCKET_PATH_RECV_AGENT     		"/tmp/monitorclt"
-
-
-/*********************************************************
- * 2009 Updates:                                         *
- *				Message Element Types for the CWAsseble- *
- *				ConfigurationUpdateRequest Function.	 *
- *********************************************************/
-
-#define CONFIG_UPDATE_REQ_QOS_ELEMENT_TYPE 0
-#define CONFIG_UPDATE_REQ_OFDM_ELEMENT_TYPE 1
-#define CONFIG_UPDATE_REQ_VENDOR_UCI_ELEMENT_TYPE 2
-#define CONFIG_UPDATE_REQ_VENDOR_WUM_ELEMENT_TYPE 3
 
 /********************************************************
  * 2009 Updates:                                        *
@@ -186,19 +135,13 @@ typedef struct {
 	char tap_name[IFNAMSIZ];
 	int tap_fd;
 	
-	// IEEE 802.11
-	char RadioInformationABGN;
-	char SuppRates[8];
-	char MultiDomCapa[6];
-	char RadioMAC[6];
-
 } CWWTPManager;	
 
 //Elena Agostini - 07/2014: max num contemporary threads of generic DTLS data session
 #define WTP_MAX_TMP_THREAD_DTLS_DATA 30
 
 
-/* Elena Agostini - 04/2014: DTLS Data Channel Generic Thread */
+/* DTLS Data Channel Generic Thread */
 typedef struct genericHandshakeThread {
 	CWThread thread_GenericDataChannelHandshake;
 	CWSocket dataSock;
@@ -209,6 +152,7 @@ typedef struct genericHandshakeThread {
 	struct genericHandshakeThread * next;
 } genericHandshakeThread;
 typedef genericHandshakeThread * genericHandshakeThreadPtr;
+
 /* Start list generic threads DTLS Data Channel Handshake*/
 extern genericHandshakeThreadPtr listGenericThreadDTLSData[WTP_MAX_TMP_THREAD_DTLS_DATA];
 
@@ -298,10 +242,10 @@ CWBool CWSaveChangeStateEventRequestMessage(CWProtocolChangeStateEventRequestVal
 CW_THREAD_RETURN_TYPE CWACipc_with_ac_hostapd(void *arg);
 
 /*
- * Elena Agostini - 03/2014: DTLS Data Channel Receive Packet
+ * DTLS Data Channel Receive Packet
  */
 CW_THREAD_RETURN_TYPE CWACReceiveDataChannel(void *arg);
-//send_data_to_hostapd(unsigned char *, int);
+
 /****************************************************************
  * 2009 Updates:												*
  *				msgElement is used for differentiation between	*
@@ -362,18 +306,6 @@ CWBool ACEnterJoin(int WTPIndex, CWProtocolMessage *msgPtr);
 CWBool ACEnterConfigure(int WTPIndex, CWProtocolMessage *msgPtr);
 CWBool ACEnterDataCheck(int WTPIndex, CWProtocolMessage *msgPtr);
 CWBool ACEnterRun(int WTPIndex, CWProtocolMessage *msgPtr, CWBool dataFlag);
-//Elena Agostini: 09/2014. IEEE Binding
-/* ACIEEEConfigurationState.c */
-CWBool CWParseIEEEConfigurationResponseMessage(CWProtocolMessage *msgPtr, int len, int WTPIndex);
-CWBool CWAssembleIEEEConfigurationRequest(CWProtocolMessage **messagesPtr,
-				   int *fragmentsNumPtr,
-				   int PMTU,
-				   int seqNum,
-				   int operation,
-				   int radioID,
-				   int wlanNum,
-				   int WTPIndex);
-
 
 CWBool CWSecurityInitSessionServerDataChannel(CWWTPManager* pWtp, 
 					CWNetworkLev4Address * address,
@@ -383,6 +315,5 @@ CWBool CWSecurityInitSessionServerDataChannel(CWWTPManager* pWtp,
 				   int *PMTUPtr);
 				   
 CW_THREAD_RETURN_TYPE CWInterface(void* arg);
-/* void CWTimerExpiredHandler(int arg); */
 
 #endif

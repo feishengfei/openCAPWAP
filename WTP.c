@@ -1,42 +1,3 @@
-/************************************************************************************************
- * Copyright (c) 2006-2009 Laboratorio di Sistemi di Elaborazione e Bioingegneria Informatica	*
- *                          Universita' Campus BioMedico - Italy								*
- *																								*
- * This program is free software; you can redistribute it and/or modify it under the terms		*
- * of the GNU General Public License as published by the Free Software Foundation; either		*
- * version 2 of the License, or (at your option) any later version.								*
- *																								*
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY				*
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A				*
- * PARTICULAR PURPOSE. See the GNU General Public License for more details.						*
- *																								*
- * You should have received a copy of the GNU General Public License along with this			*
- * program; if not, write to the:																*
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,							*
- * MA  02111-1307, USA.											
- * 
- * In addition, as a special exception, the copyright holders give permission to link the  *
- * code of portions of this program with the OpenSSL library under certain conditions as   *
- * described in each individual source file, and distribute linked combinations including  * 
- * the two. You must obey the GNU General Public License in all respects for all of the    *
- * code used other than OpenSSL.  If you modify file(s) with this exception, you may       *
- * extend this exception to your version of the file(s), but you are not obligated to do   *
- * so.  If you do not wish to do so, delete this exception statement from your version.    *
- * If you delete this exception statement from all source files in the program, then also  *
- * delete it here.                                                                         *
- *																								*
- * -------------------------------------------------------------------------------------------- *
- * Project:  Capwap																				*
- *																								*
- * Authors : Ludovico Rossi (ludo@bluepixysw.com)												*  
- *           Del Moro Andrea (andrea_delmoro@libero.it)											*
- *           Giovannini Federica (giovannini.federica@gmail.com)								*
- *           Massimo Vellucci (m.vellucci@unicampus.it)											*
- *           Mauro Bisson (mauro.bis@gmail.com)													*
- *	         Antonio Davoli (antonio.davoli@gmail.com)		
- * 			 Elena Agostini (elena.ago@gmail.com)												*
- ************************************************************************************************/
-
 #include "CWWTP.h"
 
 #ifdef DMALLOC
@@ -47,12 +8,11 @@ CW_THREAD_RETURN_TYPE CWWTPReceiveFrame(void *arg);
 
 int 	gEnabledLog;
 int 	gMaxLogFileSize;
-//Elena Agostini - 05/2014
-char 	gLogFileName[512];// = WTP_LOG_FILE_NAME;
+char 	gLogFileName[512];
 
 /* addresses of ACs for Discovery */
 char	**gCWACAddresses;
-int	gCWACCount = 0;
+int		gCWACCount = 0;
 
 int gIPv4StatusDuplicate = 0;
 int gIPv6StatusDuplicate = 0;
@@ -68,20 +28,21 @@ CWAuthSecurity 	gWTPForceSecurity;
 /* UDP network socket */
 CWSocket 		gWTPSocket;
 CWSocket 		gWTPDataSocket;
+
 /* DTLS session vars */
 CWSecurityContext	gWTPSecurityContext;
 CWSecuritySession 	gWTPSession;
 
-/* Elena Agostini - 03/2014: DTLS Data Session WTP */
+/* DTLS Data Session WTP */
 CWSecuritySession gWTPSessionData;
 CWSecurityContext gWTPSecurityContextData;
 
-/* Elena Agostini - 02/2014: OpenSSL params variables */
+/* OpenSSL params variables */
 char *gWTPCertificate=NULL;
 char *gWTPKeyfile=NULL;
 char *gWTPPassword=NULL;
 
-/* Elena Agostini - 02/2014: ECN Support Msg Elem MUST be included in Join Request/Response Messages */
+/* ECN Support Msg Elem MUST be included in Join Request/Response Messages */
 int gWTPECNSupport=0;
 
 /* list used to pass frames from wireless interface to main thread */
@@ -90,26 +51,27 @@ CWSafeList 		gFrameList;
 /* list used to pass CAPWAP packets from AC to main thread */
 CWSafeList 		gPacketReceiveList;
 
-/* Elena Agostini - 03/2014: Liste used to pass CAPWAP DATA packets from AC to DataThread */
+/* list used to pass CAPWAP DATA packets from AC to DataThread */
 CWSafeList gPacketReceiveDataList;
 
-/* Elena Agostini - 02/2014: Port number params config.wtp */
+/* Port number params config.wtp */
 int WTP_PORT_CONTROL;
 int WTP_PORT_DATA;
 
-//Elena Agostini - 05/2014: single log_file foreach WTP
+/* single log_file foreach WTP */
 char * wtpLogFile;
 
 /* used to synchronize access to the lists */
 CWThreadCondition    gInterfaceWait;
 CWThreadMutex 		gInterfaceMutex;
 
-//Elena Agostini: Mutex and Cond dedicated to Data Packet List
+/* Mutex and Cond dedicated to Data Packet List */
 CWThreadCondition    gInterfaceWaitData;
 CWThreadMutex 		gInterfaceMutexData;
 
 /* infos about the ACs to discover */
 CWACDescriptor *gCWACList = NULL;
+
 /* infos on the better AC we discovered so far */
 CWACInfoValues *gACInfoPtr = NULL;
 
@@ -126,9 +88,6 @@ int gWTPRetransmissionCount;
 CWPendingRequestMessage gPendingRequestMsgs[MAX_PENDING_REQUEST_MSGS];	
 
 CWBool WTPExitOnUpdateCommit = CW_FALSE;
-
-//Elena Agostini: nl80211 support
-struct WTPglobalPhyInfo * gWTPglobalPhyInfo;
 
 #define CW_SINGLE_THREAD
 
@@ -163,7 +122,7 @@ CWBool CWReceiveMessage(CWProtocolMessage *msgPtr) {
 		if(!CWSecurityReceive(gWTPSession, buf, CW_BUFFER_SIZE, &readBytes)) {return CW_FALSE;}
 #endif
 
-		if(!CWProtocolParseFragment(buf, readBytes, &fragments, msgPtr, &dataFlag, NULL)) {
+		if(!CWProtocolParseFragment(buf, readBytes, &fragments, msgPtr, &dataFlag)) {
 			if(CWErrorGetLastErrorCode() == CW_ERROR_NEED_RESOURCE) { // we need at least one more fragment
 				continue;
 			} else { // error
@@ -227,7 +186,7 @@ CWBool CWReceiveDataMessage(CWProtocolMessage *msgPtr) {
 		}
 #endif
 
-	if(!CWProtocolParseFragment(buf, readBytes, &fragments, msgPtr, &dataFlag, NULL)) {
+	if(!CWProtocolParseFragment(buf, readBytes, &fragments, msgPtr, &dataFlag)) {
 			if(CWErrorGetLastErrorCode()){
 				CWErrorCode error;
 				error=CWErrorGetLastErrorCode();

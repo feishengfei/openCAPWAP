@@ -126,7 +126,7 @@ CWBool CWParseDiscoveryRequestMessage(char *msg,
 	completeMsg.offset = 0;
 	
 	CWBool dataFlag = CW_FALSE;
-	if(!(CWParseTransportHeader(&completeMsg, &transportVal, &dataFlag, NULL))) 
+	if(!(CWParseTransportHeader(&completeMsg, &transportVal, &dataFlag))) 
 		/* will be handled by the caller */
 		return CW_FALSE;
 	if(!(CWParseControlHeader(&completeMsg, &controlVal))) 

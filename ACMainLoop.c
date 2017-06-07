@@ -50,7 +50,7 @@ CWThreadSpecific gIndexSpecific;
 int gCWWaitJoin = CW_WAIT_JOIN_DEFAULT;
 
 CW_THREAD_RETURN_TYPE CWManageWTP(void *arg);
-CW_THREAD_RETURN_TYPE CWManageTimers(void *arg);
+
 void CWCriticalTimerExpiredHandler(int arg);
 void CWSoftTimerExpiredHandler(int arg);
 
@@ -60,6 +60,7 @@ void CWACManageIncomingPacket(CWSocket sock,
 			      int incomingInterfaceIndex,
 			      CWNetworkLev4Address *addrPtr,
 			      CWBool dataFlag );
+
 void _CWCloseThread(int i);
 void CWResetWTPProtocolManager(CWWTPProtocolManager *WTPProtocolManager);
 __inline__ CWWTPManager *CWWTPByName(const char *addr);
@@ -89,14 +90,13 @@ void CWACSetNewGenericHandshakeDataThread(genericHandshakeThreadPtr * genericThr
 	CWSetMutexSafeList((*genericThreadStruct)->packetDataList, &((*genericThreadStruct)->interfaceMutex));
 	CWSetConditionSafeList((*genericThreadStruct)->packetDataList, &((*genericThreadStruct)->interfaceWait));
 	
-	//Aggiunta ClientHello				
+	//ClientHello				
 	CWLockSafeList((*genericThreadStruct)->packetDataList);
 	CWAddElementToSafeListTailwitDataFlag((*genericThreadStruct)->packetDataList, pData, readBytes, 1);
 	CWUnlockSafeList((*genericThreadStruct)->packetDataList);
 	(*genericThreadStruct)->dataSock = sock;
 	(*genericThreadStruct)->next = NULL;
 	
-	//return genericThreadStruct;
 }
 
 void CWACEnterMainLoop() {
@@ -277,7 +277,7 @@ void CWACManageIncomingPacket(CWSocket sock,
 					msgDataChannel.msg = buf;
 					msgDataChannel.offset = 0;
 					
-					if(!CWParseTransportHeader(&msgDataChannel, &values, &dataFlag, NULL)){
+					if(!CWParseTransportHeader(&msgDataChannel, &values, &dataFlag)){
 						CWDebugLog("CWParseTransportHeader failed");
 						return ;
 					}
@@ -304,7 +304,7 @@ void CWACManageIncomingPacket(CWSocket sock,
 			msgDataChannel.msg = buf;
 			msgDataChannel.offset = 0;
 			
-			if(!CWParseTransportHeader(&msgDataChannel, &values, &dataFlag, NULL)){
+			if(!CWParseTransportHeader(&msgDataChannel, &values, &dataFlag)){
 				CWDebugLog("CWParseTransportHeader failed");
 				return;
 			}
@@ -453,7 +453,6 @@ void CWACManageIncomingPacket(CWSocket sock,
 					       &gWTPs[i].interfaceWait);
 
 			/*
-			 * Elena Agostini - 03/2014
 			 * DTLS Data Packet List
 			 */
 			#ifdef CW_DTLS_DATA_CHANNEL
@@ -506,7 +505,7 @@ void CWACManageIncomingPacket(CWSocket sock,
 				return;
 			}
 	
-	//ELENA - DA LEVARE CON DTLS DATI?
+			//To be taken with DTLS data
 			/* Clone data packet */
 			CW_CREATE_OBJECT_SIZE_ERR(pData, readBytes, { CWLog("Out Of Memory"); return; });
 			memcpy(pData, buf, readBytes);
@@ -523,8 +522,7 @@ void CWACManageIncomingPacket(CWSocket sock,
 
 /*
  * Simple job: see if we have a thread that is serving address *addressPtr
- * 
- * Elena Agostini - 04/2014: more WTPs with same IPs, different PORTs
+ * more WTPs with same IPs, different PORTs
  */
 __inline__ CWWTPManager *CWWTPByAddress(CWNetworkLev4Address *addressPtr, CWSocket sock, CWBool dataFlag, char * sessionID) {
 
@@ -584,7 +582,7 @@ __inline__ CWWTPManager *CWWTPByAddress(CWNetworkLev4Address *addressPtr, CWSock
 	return NULL;
 }
 
-/* Elena Agostini - 04/2014: check if there is a generic thread for this handshake on datachannel */
+/* check if there is a generic thread for this handshake on datachannel */
 __inline__ genericHandshakeThreadPtr CWWTPThreadGenericByAddress(CWNetworkLev4Address *addressPtr) {
 	
 	int indexTmpThread=0;
@@ -789,8 +787,8 @@ CW_THREAD_RETURN_TYPE CWManageWTP(void *arg) {
 						    readBytes,
 						    &(gWTPs[i].fragmentsList),
 						    &msg,
-						    &dataFlag,
-						    gWTPs[i].RadioMAC)) {
+						    &dataFlag))
+			{
 
 				if(CWErrorGetLastErrorCode() == CW_ERROR_NEED_RESOURCE) {
 
@@ -913,8 +911,6 @@ CW_THREAD_RETURN_TYPE CWManageWTP(void *arg) {
 							CWErrorHandleLast();
 							CWThreadSetSignals(SIG_UNBLOCK, 1, CW_SOFT_TIMER_EXPIRED_SIGNAL);
 							/*
-							 * Elena Agostini - 03/2014
-							 * 
 							 * DTLS Data Session AC
 							 */
 							//TODO
@@ -940,67 +936,6 @@ CW_THREAD_RETURN_TYPE CWManageWTP(void *arg) {
 			
 			CWBool bResult = CW_FALSE;
 			
-			switch (gWTPs[i].interfaceCommand) {
-			/********************************************************
-			 * 2009 Update:											*
-			 *				New switch case for OFDM_CONTROL_CMD	*
-			 ********************************************************/
-			  
-			case OFDM_CONTROL_CMD: 
-				  {
-					int seqNum = CWGetSeqNum();
-					
-					  if (CWAssembleConfigurationUpdateRequest(&(gWTPs[i].messages), 
-														 &(gWTPs[i].messagesCount),
-														 gWTPs[i].pathMTU,
-														 seqNum, CONFIG_UPDATE_REQ_OFDM_ELEMENT_TYPE)) {
-				  
-					  if(CWACSendAcknowledgedPacket(i, CW_MSG_TYPE_VALUE_CONFIGURE_UPDATE_RESPONSE, seqNum)) 
-						bResult = CW_TRUE;
-					  else
-						CWACStopRetransmission(i);
-					}
-				  break;
-				  }
-			/*Update 2009
-				Added case to manage UCI configuration command*/
-			case UCI_CONTROL_CMD: 
-				  {
-					int seqNum = CWGetSeqNum();
-					
-					  if (CWAssembleConfigurationUpdateRequest(&(gWTPs[i].messages), 
-														 &(gWTPs[i].messagesCount),
-														 gWTPs[i].pathMTU,
-														 seqNum, CONFIG_UPDATE_REQ_VENDOR_UCI_ELEMENT_TYPE)) {
-				  
-					  if(CWACSendAcknowledgedPacket(i, CW_MSG_TYPE_VALUE_CONFIGURE_UPDATE_RESPONSE, seqNum)) 
-						bResult = CW_TRUE;
-					  else
-						CWACStopRetransmission(i);
-					}
-				  break;
-				  }
-			case WTP_UPDATE_CMD:
-				{
-					 int seqNum = CWGetSeqNum();
-
-                                         if (CWAssembleConfigurationUpdateRequest(&(gWTPs[i].messages),
-                                                                                                                 &(gWTPs[i].messagesCount),
-                                                                                                                 gWTPs[i].pathMTU,
-                                                                                                                 seqNum, CONFIG_UPDATE_REQ_VENDOR_WUM_ELEMENT_TYPE)) {
-
-                                          if(CWACSendAcknowledgedPacket(i, CW_MSG_TYPE_VALUE_CONFIGURE_UPDATE_RESPONSE, seqNum))
-                                                bResult = CW_TRUE;
-                                          else
-                                                CWACStopRetransmission(i);
-                                        }
-                                  break;
-			
-
-	
-				}
-			}
-
 				gWTPs[i].interfaceCommand = NO_CMD;
 
 				if (bResult)
@@ -1075,7 +1010,7 @@ void _CWCloseThread(int i) {
 	gWTPs[i].isNotFree = CW_FALSE;
 	CWThreadMutexUnlock(&gWTPsMutex);
 	
-//-- Elena Agostini: fake method to delete all node about that WTP
+	//fake method to delete all node about that WTP
 	nodeAVL * tmp;
 	
 	CWLog("AVL AC: \n");
@@ -1093,7 +1028,6 @@ void _CWCloseThread(int i) {
 	}while(tmp != NULL && avlTree != NULL);
 	
 	CWThreadMutexUnlock(&(mutexAvlTree));
-//--
 	
 	CWExitThread();
 }
@@ -1185,7 +1119,7 @@ void CWSoftTimerExpiredHandler(int arg) {
 		_CWCloseThread(*iPtr);
 	}
 	
-	/* CWDebugLog("~~~~~~fine ritrasmissione ~~~~~"); */
+	/* CWDebugLog("~~~~~~Retransmission end~~~~~"); */
 	CWThreadSetSignals(SIG_UNBLOCK, 2, 
 			   CW_SOFT_TIMER_EXPIRED_SIGNAL,
 			   CW_CRITICAL_TIMER_EXPIRED_SIGNAL);
@@ -1215,19 +1149,10 @@ void CWResetWTPProtocolManager(CWWTPProtocolManager *WTPProtocolManager) {
 	CW_FREE_OBJECT(WTPProtocolManager->WTPRebootStatistics);
 
 	//CWWTPResetRebootStatistics(&(WTPProtocolManager->WTPRebootStatistics));
-
-	/*
-		**mancano questi campi:**
-		CWNetworkLev4Address address;
-		int pathMTU;
-		struct sockaddr_in ipv4Address;
-		CWProtocolConfigureRequestValues *configureReqValuesPtr;
-		CWTimerID currentPacketTimer;
-	*/
 }
 
 /*
- * Elena Agostini - 04/2014: Generic thread handler generich DTLS Data Channel handshake WTP 
+ * Generic thread handler generich DTLS Data Channel handshake WTP 
  */
 CW_THREAD_RETURN_TYPE CWGenericWTPDataHandshake(void *arg) {
 	
@@ -1264,16 +1189,16 @@ CW_THREAD_RETURN_TYPE CWGenericWTPDataHandshake(void *arg) {
 		CWCloseThread();
 	}
 	
-	/* Leggo i dati dalla packetList e li riscrivo decifrati */	
+	/* I read the data from the packetlist and rewrite them deciphered */
 	CW_REPEAT_FOREVER {
 		countPacketDataList=0;
 	
-		//Se ci sono pacchetti sulla lista dati ... 
+		//If there are packages on the data list
 		CWLockSafeList(argInputThread->packetDataList);
 		countPacketDataList = CWGetCountElementFromSafeList(argInputThread->packetDataList);
 		CWUnlockSafeList(argInputThread->packetDataList);
 		if(countPacketDataList > 0) {
-			// ... li legge cifrati ... 
+			// ... Reads them encrypted ... 
 			if(!CWErr(CWSecurityReceive(sessionDataGeneric,
 										buf,
 										CW_BUFFER_SIZE - 1,
@@ -1284,12 +1209,12 @@ CW_THREAD_RETURN_TYPE CWGenericWTPDataHandshake(void *arg) {
 				continue;
 			}
 			
-			/* Se e un keepalive associo il canale dati a quello di controllo */
+			/* If it is a keepalive, I associate the datachannel with that of control*/
 			
 			msgDataChannel.msg = buf;
 			msgDataChannel.offset = 0;
 			
-			if(!CWParseTransportHeader(&msgDataChannel, &values, &dataFlag, NULL)){
+			if(!CWParseTransportHeader(&msgDataChannel, &values, &dataFlag)){
 				CWDebugLog("CWParseTransportHeader failed");
 				return CW_FALSE;
 			}
@@ -1337,14 +1262,13 @@ CW_THREAD_RETURN_TYPE CWGenericWTPDataHandshake(void *arg) {
 						}
 					}
 
-					CWLog("Inviato KeepAlive");
+					CWLog("Sent KeepAlive");
 
 					int k;
 					for(k = 0; messages && k < fragmentsNum; k++) {
 						CW_FREE_PROTOCOL_MESSAGE(messages[k]);
 					}	
 					CW_FREE_OBJECT(messages);
-					/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 			
 			
 					//Terminate handshake and Terminate thread

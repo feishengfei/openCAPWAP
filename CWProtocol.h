@@ -1,42 +1,3 @@
-/************************************************************************************************
- * Copyright (c) 2006-2009 Laboratorio di Sistemi di Elaborazione e Bioingegneria Informatica	*
- *                          Universita' Campus BioMedico - Italy								*
- *																								*
- * This program is free software; you can redistribute it and/or modify it under the terms		*
- * of the GNU General Public License as published by the Free Software Foundation; either		*
- * version 2 of the License, or (at your option) any later version.								*
- *																								*
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY				*
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A				*
- * PARTICULAR PURPOSE. See the GNU General Public License for more details.						*
- *																								*
- * You should have received a copy of the GNU General Public License along with this			*
- * program; if not, write to the:																*
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,							*
- * MA  02111-1307, USA.																			*
- *										
- * In addition, as a special exception, the copyright holders give permission to link the  *
- * code of portions of this program with the OpenSSL library under certain conditions as   *
- * described in each individual source file, and distribute linked combinations including  * 
- * the two. You must obey the GNU General Public License in all respects for all of the    *
- * code used other than OpenSSL.  If you modify file(s) with this exception, you may       *
- * extend this exception to your version of the file(s), but you are not obligated to do   *
- * so.  If you do not wish to do so, delete this exception statement from your version.    *
- * If you delete this exception statement from all source files in the program, then also  *
- * delete it here.                                                                         *
- * 
- * -------------------------------------------------------------------------------------------- *
- * Project:  Capwap																				*
- *																								*
- * Authors : Ludovico Rossi (ludo@bluepixysw.com)												*  
- *           Del Moro Andrea (andrea_delmoro@libero.it)											*
- *           Giovannini Federica (giovannini.federica@gmail.com)								*
- *           Massimo Vellucci (m.vellucci@unicampus.it)											*
- *           Mauro Bisson (mauro.bis@gmail.com)													*
- *	         Antonio Davoli (antonio.davoli@gmail.com)											*
- ************************************************************************************************/
-
-
 #ifndef __CAPWAP_CWProtocol_HEADER__
 #define __CAPWAP_CWProtocol_HEADER__
 
@@ -274,17 +235,6 @@
 #define 	CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_AC_PRIORITY		128
 #define 	CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_AC_PRIORITY_LEN	1
 #define 	CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_AC_PRIORITY_DEFAULT	3
-
-// IEEE 802.11 Message Element
-#define 	CW_MSG_ELEMENT_IEEE80211_ADD_WLAN_CW_TYPE						1024
-#define 	CW_MSG_ELEMENT_IEEE80211_ASSIGNED_WTP_BSSID_CW_TYPE				1026
-#define 	CW_MSG_ELEMENT_IEEE80211_DELETE_WLAN_CW_TYPE					1027
-#define 	CW_MSG_ELEMENT_IEEE80211_MAC_OPERATION_CW_TYPE					1030
-#define 	CW_MSG_ELEMENT_IEEE80211_MULTI_DOMAIN_CAPABILITY_CW_TYPE		1032
-#define 	CW_MSG_ELEMENT_IEEE80211_STATION								1036
-#define 	CW_MSG_ELEMENT_IEEE80211_SUPPORTED_RATES_CW_TYPE				1040
-#define 	CW_MSG_ELEMENT_IEEE80211_UPDATE_WLAN_CW_TYPE					1044
-#define 	CW_MSG_ELEMENT_IEEE80211_WTP_RADIO_INFORMATION_CW_TYPE			1048
 
 // CAPWAP Protocol Variables
 #define		CW_MAX_RETRANSMIT_DEFAULT		5
@@ -677,9 +627,6 @@ typedef struct {
 	WTPRadioStatisticsInfo statistics;	
 	
 	void* bindingValuesPtr;
-	
-	//WTPSinglePhyInfo gWTPPhyInfo;
-	
 } CWWTPRadioInfoValues;
 
 typedef struct {
@@ -722,10 +669,10 @@ unsigned int CWProtocolRetrieve32(CWProtocolMessage *msgPtr);
 char *CWProtocolRetrieveStr(CWProtocolMessage *msgPtr, int len);
 char *CWProtocolRetrieveRawBytes(CWProtocolMessage *msgPtr, int len);
 
-CWBool CWProtocolParseFragment(char *buf, int readBytes, CWList *fragmentsListPtr, CWProtocolMessage *reassembledMsg, CWBool *dataFlag, char *RadioMAC);
+CWBool CWProtocolParseFragment(char *buf, int readBytes, CWList *fragmentsListPtr, CWProtocolMessage *reassembledMsg, CWBool *dataFlag);
 void CWProtocolDestroyFragment(void *f);
 
-CWBool CWParseTransportHeader(CWProtocolMessage *msgPtr, CWProtocolTransportHeaderValues *valuesPtr, CWBool *dataFlag, char *RadioMAC);
+CWBool CWParseTransportHeader(CWProtocolMessage *msgPtr, CWProtocolTransportHeaderValues *valuesPtr, CWBool *dataFlag);
 CWBool CWParseControlHeader(CWProtocolMessage *msgPtr, CWControlHeaderValues *valPtr);
 CWBool CWParseFormatMsgElem(CWProtocolMessage *completeMsg,unsigned short int *type,unsigned short int *len);
 

@@ -1,41 +1,3 @@
-/*******************************************************************************************
- * Copyright (c) 2006-7 Laboratorio di Sistemi di Elaborazione e Bioingegneria Informatica *
- *                      Universita' Campus BioMedico - Italy                               *
- *                                                                                         *
- * This program is free software; you can redistribute it and/or modify it under the terms *
- * of the GNU General Public License as published by the Free Software Foundation; either  *
- * version 2 of the License, or (at your option) any later version.                        *
- *                                                                                         *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY         *
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 	       *
- * PARTICULAR PURPOSE. See the GNU General Public License for more details.                *
- *                                                                                         *
- * You should have received a copy of the GNU General Public License along with this       *
- * program; if not, write to the:                                                          *
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,                    *
- * MA  02111-1307, USA.                                                                    *
- *                                                                                         *
- * In addition, as a special exception, the copyright holders give permission to link the  *
- * code of portions of this program with the OpenSSL library under certain conditions as   *
- * described in each individual source file, and distribute linked combinations including  * 
- * the two. You must obey the GNU General Public License in all respects for all of the    *
- * code used other than OpenSSL.  If you modify file(s) with this exception, you may       *
- * extend this exception to your version of the file(s), but you are not obligated to do   *
- * so.  If you do not wish to do so, delete this exception statement from your version.    *
- * If you delete this exception statement from all source files in the program, then also  *
- * delete it here.                                                                         *
- * 
- * --------------------------------------------------------------------------------------- *
- * Project:  Capwap                                                                        *
- *                                                                                         *
- * Author :  Ludovico Rossi (ludo@bluepixysw.com)                                          *  
- *           Del Moro Andrea (andrea_delmoro@libero.it)                                    *
- *           Giovannini Federica (giovannini.federica@gmail.com)                           *
- *           Massimo Vellucci (m.vellucci@unicampus.it)                                    *
- *           Mauro Bisson (mauro.bis@gmail.com)                                            *
- *******************************************************************************************/
-
- 
 #include "CWWTP.h"
 #include "WTPProtocol_User.h"
 
@@ -234,7 +196,8 @@ CWBool CWAssembleMsgElemWTPBoardData(CWProtocolMessage *msgPtr)
 	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_WTP_BOARD_DATA_CW_TYPE);
 }
 
-CWBool CWAssembleMsgElemVendorSpecificPayload(CWProtocolMessage *msgPtr) {
+CWBool CWAssembleMsgElemVendorSpecificPayload(CWProtocolMessage *msgPtr)
+{
 	const int VENDOR_ID_LENGTH = 4; 	//Vendor Identifier is 4 bytes long
 	const int  ELEMENT_ID = 2; 	//Type and Length of a TLV field is 4 byte long 
 	const int  DATA_LEN = 2;
@@ -266,7 +229,8 @@ CWBool CWAssembleMsgElemVendorSpecificPayload(CWProtocolMessage *msgPtr) {
 	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_VENDOR_SPEC_PAYLOAD_BW_CW_TYPE);
 }
 
-CWBool CWAssembleMsgElemWTPDescriptor(CWProtocolMessage *msgPtr) {
+CWBool CWAssembleMsgElemWTPDescriptor(CWProtocolMessage *msgPtr)
+{
 	const int GENERIC_RADIO_INFO_LENGTH = 4;//First 4 bytes for Max Radios, Radios In Use and Encryption Capability 
 	const int VENDOR_ID_LENGTH = 4; 	//Vendor Identifier is 4 bytes long
 	const int TLV_HEADER_LENGTH = 4; 	//Type and Length of a TLV field is 4 byte long 
@@ -300,7 +264,7 @@ CWBool CWAssembleMsgElemWTPDescriptor(CWProtocolMessage *msgPtr) {
 
 	// encryption capabilities
 	CWProtocolStore8(msgPtr, 1);
-	CWProtocolStore8(msgPtr, 1);	// IEEE802.11 binding
+	CWProtocolStore8(msgPtr, 1);
 	CWProtocolStore16(msgPtr, CWWTPGetEncCapabilities());
  
 	for(i = 0; i < infos.vendorInfosCount; i++) {
@@ -327,13 +291,14 @@ CWBool CWAssembleMsgElemWTPDescriptor(CWProtocolMessage *msgPtr) {
 	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_WTP_DESCRIPTOR_CW_TYPE);
 }
 
-CWBool CWAssembleMsgElemWTPFrameTunnelMode(CWProtocolMessage *msgPtr) {
+CWBool CWAssembleMsgElemWTPFrameTunnelMode(CWProtocolMessage *msgPtr)
+{
 	if(msgPtr == NULL) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
 	
 	// create message
 	CW_CREATE_PROTOCOL_MESSAGE(*msgPtr, 1, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
 	
-//	CWDebugLog("Frame Tunnel Mode: %d", CWWTPGetFrameTunnelMode());
+	//	CWDebugLog("Frame Tunnel Mode: %d", CWWTPGetFrameTunnelMode());
 	CWProtocolStore8(msgPtr, CWWTPGetFrameTunnelMode()); // frame encryption
 
 	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_WTP_FRAME_TUNNEL_MODE_CW_TYPE);
@@ -362,94 +327,6 @@ CWBool CWAssembleMsgElemWTPMACType(CWProtocolMessage *msgPtr) {
 	CWProtocolStore8(msgPtr, CWWTPGetMACType()); // mode of operation of the WTP (local, split, ...)
 
 	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_WTP_MAC_TYPE_CW_TYPE);
-}
-
-/* Elena Agostini - 07/2014: WTP Radio Info: nl80211 support */
-CWBool CWAssembleMsgElemWTPRadioInformation(CWProtocolMessage *msgPtr, int radioID, char radioType) {
-
-	if(msgPtr == NULL) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
-	
-	CW_CREATE_PROTOCOL_MESSAGE(*msgPtr, 5, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-	
-	//RadioID - 1 byte
-	CWProtocolStore8(msgPtr, radioID);
-	//Reserved - 3 byte
-	CWProtocolStore8(msgPtr, 0); 
-	CWProtocolStore8(msgPtr, 0);
-	CWProtocolStore8(msgPtr, 0);
-	//Radio Type	 
-	CWProtocolStore8(msgPtr, radioType);
-
-	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_IEEE80211_WTP_RADIO_INFORMATION_CW_TYPE);
-}
-
-CWBool CWAssembleMsgElemSupportedRates(CWProtocolMessage *msgPtr, int radioID,char * suppRates, int lenSuppRates) {
-
-	if(msgPtr == NULL) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
-
-	CW_CREATE_PROTOCOL_MESSAGE(*msgPtr, 9, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-		
-	CWProtocolStore8(msgPtr, radioID); 
-	int index;
-	for(index=0; index<lenSuppRates; index++)
-		CWProtocolStore8(msgPtr, suppRates[index]);
-	
-	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_IEEE80211_SUPPORTED_RATES_CW_TYPE);
-}
-
-//Elena Agostini - 08/2014: nl80211 support 
-CWBool CWAssembleMsgElemMultiDomainCapability(CWProtocolMessage *msgPtr, int radioID, int firstChannel, int numChannels, int maxTxPower) {
-
-	if(msgPtr == NULL) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
-
-	CW_CREATE_PROTOCOL_MESSAGE(*msgPtr, 8, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-	
-	CWProtocolStore8(msgPtr, radioID); 
-	CWProtocolStore8(msgPtr, 0); 
-	
-	CWProtocolStore16(msgPtr, firstChannel);
-	CWProtocolStore16(msgPtr, numChannels); 
-	CWProtocolStore16(msgPtr, maxTxPower); 
-
-	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_IEEE80211_MULTI_DOMAIN_CAPABILITY_CW_TYPE);
-}
-
-//Elena Agostini - 08/2014: nl80211 support 
-CWBool CWAssembleMsgElemMACOperation(CWProtocolMessage *msgPtr, int radioID, int fragmentationTreshold, int rtsThreshold, char shortRetry, char longRetry, int txMSDU, int rxMSDU) {
-
-	if(msgPtr == NULL) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
-
-	CW_CREATE_PROTOCOL_MESSAGE(*msgPtr, 16, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-	
-	CWProtocolStore8(msgPtr, radioID); 
-	CWProtocolStore8(msgPtr, 0); 
-	
-	CWProtocolStore16(msgPtr, rtsThreshold);
-	CWProtocolStore8(msgPtr, shortRetry);
-	CWProtocolStore8(msgPtr, longRetry);
-	CWProtocolStore16(msgPtr, fragmentationTreshold);
-	
-	CWProtocolStore32(msgPtr, txMSDU);
-	CWProtocolStore32(msgPtr, rxMSDU);
-	
-	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_IEEE80211_MAC_OPERATION_CW_TYPE);
-}
-
-//Elena Agostini - 09/2014: IEEE Binding
-CWBool CWAssembleMsgElemAssignedWTPSSID(CWProtocolMessage *msgPtr, int radioID, int wlanID, char * bssid) {
-
-	if(msgPtr == NULL) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
-
-	CW_CREATE_PROTOCOL_MESSAGE(*msgPtr, 8, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-	
-	//1
-	CWProtocolStore8(msgPtr, radioID); 
-	//1
-	CWProtocolStore8(msgPtr, wlanID); 
-	//6
-	CWProtocolStoreRawBytes(msgPtr, bssid, ETH_ALEN);
-	
-	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_IEEE80211_ASSIGNED_WTP_BSSID_CW_TYPE);
 }
 
 
@@ -790,75 +667,6 @@ CWBool CWAssembleMsgElemDecryptErrorReport(CWProtocolMessage *msgPtr, int radioI
 	
 }
 
-/*
-CWBool CWAssembleMsgElemWTPRadioInformation(CWProtocolMessage *msgPtr) {
-	CWProtocolMessage *msgs;
-	CWRadiosInformation infos;
-	
-	int len = 0;
-	int i;
-	
-	if(msgPtr == NULL) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
-	
-	CWDebugLog("Assemble WTP Radio Info");
-	
-	if(!CWWTPGetRadiosInformation(&infos)) {
-		return CW_FALSE;
-	}
-	
-	// create one message element for each radio
-	
-	CW_CREATE_ARRAY_ERR(msgs, (infos.radiosCount), CWProtocolMessage, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-	
-	for(i = 0; i < infos.radiosCount; i++) {
-		// create message
-		CW_CREATE_PROTOCOL_MESSAGE(msgs[i], 5, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-		CWProtocolStore8(&(msgs[i]), infos.radios[i].ID); // ID of the radio
-		CWProtocolStore32(&(msgs[i]), infos.radios[i].type); // type of the radio
-		
-		CWDebugLog("WTPRadioInformation: %d - %d", infos.radios[i].ID, infos.radios[i].type);
-		
-		if(!(CWAssembleMsgElem(&(msgs[i]), CW_MSG_ELEMENT_WTP_RADIO_INFO_CW_TYPE))) {
-			int j;
-			for(j = i; j >= 0; j--) { CW_FREE_PROTOCOL_MESSAGE(msgs[j]);}
-			CW_FREE_OBJECT(infos.radios);
-			CW_FREE_OBJECT(msgs);
-			return CW_FALSE;
-		}
-		
-		len += msgs[i].offset;
-	}
-	
-	// return all the messages as one big message
-	CW_CREATE_PROTOCOL_MESSAGE(*msgPtr, len, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-	
-	for(i = 0; i < infos.radiosCount; i++) {
-		CWProtocolStoreMessage(msgPtr, &(msgs[i]));
-		CW_FREE_PROTOCOL_MESSAGE(msgs[i]);
-	}
-	
-	CW_FREE_OBJECT(msgs);
-	CW_FREE_OBJECT(infos.radios);
-	
-	return CW_TRUE;
-}
-*/
-
-/*_________________________________________________________________________*/
-/*  *****************************___PARSE___*****************************  */
-CWBool CWParseWTPRadioInformation_FromAC(CWProtocolMessage *msgPtr, int len, char *valPtr) {
-	//CWParseMessageElementStart();
-	
-	CWProtocolRetrieve8(msgPtr);
-	
-	CWProtocolRetrieve8(msgPtr);
-	CWProtocolRetrieve8(msgPtr);
-	CWProtocolRetrieve8(msgPtr);
-	*valPtr = CWProtocolRetrieve8(msgPtr);
-	return CW_TRUE;
-	//CWParseMessageElementEnd();
-}
-
 CWBool CWParseACDescriptor(CWProtocolMessage *msgPtr, int len, CWACInfoValues *valPtr) {
 	int i=0, theOffset=0;
 		
@@ -981,10 +789,6 @@ CWBool CWParseACIPv6List(CWProtocolMessage *msgPtr, int len, ACIPv6ListValues *v
 	for(i = 0; i < valPtr->ACIPv6ListCount; i++) {
 		struct sockaddr_in6 addr;
    		
-		/*
-                 * BUG ML09
-                 * 19/10/2009 - Donato Capitella
-                 */                
 		void *ptr;
                 ptr =  CWProtocolRetrieveRawBytes(msgPtr, 16);
                 CW_COPY_MEMORY(&((valPtr->ACIPv6List)[i]), ptr, 16);
@@ -999,7 +803,6 @@ CWBool CWParseACIPv6List(CWProtocolMessage *msgPtr, int len, ACIPv6ListValues *v
 	CWParseMessageElementEnd();
 }
 
-/* +++++++++++++++++++++++++ Elena Agostini - 09/2014: NEW IEEE BINDING +++++++++++++++++++++++++ */
 
 CWBool CWParseCWControlIPv4Addresses(CWProtocolMessage *msgPtr, int len, CWProtocolIPv4NetworkInterface *valPtr) {
 	CWParseMessageElementStart();
@@ -1044,8 +847,6 @@ CWBool CWParseCWTimers (CWProtocolMessage *msgPtr, int len, CWProtocolConfigureR
 }
 
 /*
- * Elena Agostini - 02/2014
- *
  * ECN Support Msg Elem MUST be included in Join Request/Response Messages
  */
 CWBool CWParseACECNSupport(CWProtocolMessage *msgPtr, int len, int *valPtr) {
@@ -1097,5 +898,4 @@ void CWWTPResetRebootStatistics(WTPRebootStatisticsInfo *rebootStatistics)
 	rebootStatistics->otherFailureCount=0;
 	rebootStatistics->unknownFailureCount=0;
 	rebootStatistics->lastFailureType=NOT_SUPPORTED;
-}	
-
+}

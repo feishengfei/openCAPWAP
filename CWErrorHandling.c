@@ -42,35 +42,21 @@
 #include "../dmalloc-5.5.0/dmalloc.h"
 #endif
 
-#ifndef CW_SINGLE_THREAD
-	CWThreadSpecific gLastError;
-	//CWThreadOnce gInitLastErrorOnce = CW_THREAD_ONCE_INIT;
-#else
-	static CWErrorHandlingInfo *gLastErrorDataPtr;
-#endif
+CWThreadSpecific gLastError;
 
-void CWErrorHandlingInitLib() {	
-	//CWDebugLog("Init Errors ");
-	
-	#ifndef CW_SINGLE_THREAD
-		if(!CWThreadCreateSpecific(&gLastError, NULL)) 
-		{
-			//Elena Agostini - 05/2014
-			fprintf(stderr, "Critical Error, closing the process...");
-//			CWLog("Critical Error, closing the process..."); 
-			exit(1);
-		}
-	#else
-		CW_CREATE_OBJECT_ERR(infoPtr, CWErrorHandlingInfo, return;);
-		infoPtr->code = CW_ERROR_NONE;
-		gLastErrorDataPtr = infoPtr;
-	#endif
+void CWErrorHandlingInitLib()
+{	
+	if(!CWThreadCreateSpecific(&gLastError, NULL)) 
+	{
+		fprintf(stderr, "Critical Error, closing the process...");
+		exit(1);
+	}
 }
 
-CWBool _CWErrorRaise(CWErrorCode code, const char *msg, const char *fileName, int line) {
+CWBool _CWErrorRaise(CWErrorCode code, const char *msg, const char *fileName, int line)
+{
 	CWErrorHandlingInfo *infoPtr;
 	
-	#ifndef CW_SINGLE_THREAD
 		infoPtr = CWThreadGetSpecific(&gLastError);
 		if(infoPtr==NULL){
 			CW_CREATE_OBJECT_ERR(infoPtr, CWErrorHandlingInfo, exit(1););
@@ -81,9 +67,6 @@ CWBool _CWErrorRaise(CWErrorCode code, const char *msg, const char *fileName, in
 				exit(1);
 			}
 		}
-	#else
-		infoPtr = gLastErrorDataPtr;
-	#endif
 	
 	if(infoPtr == NULL) 
 	{
@@ -100,7 +83,8 @@ CWBool _CWErrorRaise(CWErrorCode code, const char *msg, const char *fileName, in
 	return CW_FALSE;
 }
 
-void CWErrorPrint(CWErrorHandlingInfo *infoPtr, const char *desc, const char *fileName, int line) {
+void CWErrorPrint(CWErrorHandlingInfo *infoPtr, const char *desc, const char *fileName, int line)
+{
 	if(infoPtr == NULL) return;
 	
 	if(infoPtr->message != NULL && infoPtr->message[0]!='\0') {
@@ -112,14 +96,11 @@ void CWErrorPrint(CWErrorHandlingInfo *infoPtr, const char *desc, const char *fi
 		infoPtr->line, infoPtr->fileName, line, fileName);
 }
 
-CWErrorCode CWErrorGetLastErrorCode() {
+CWErrorCode CWErrorGetLastErrorCode()
+{
 	CWErrorHandlingInfo *infoPtr;
 	
-	#ifndef CW_SINGLE_THREAD
-		infoPtr = CWThreadGetSpecific(&gLastError);
-	#else
-		infoPtr = gLastErrorDataPtr;
-	#endif
+	infoPtr = CWThreadGetSpecific(&gLastError);
 	
 	if(infoPtr == NULL) return CW_ERROR_GENERAL;
 	
@@ -129,11 +110,7 @@ CWErrorCode CWErrorGetLastErrorCode() {
 CWBool _CWErrorHandleLast(const char *fileName, int line) {
 	CWErrorHandlingInfo *infoPtr;
 	
-	#ifndef CW_SINGLE_THREAD
 		infoPtr = CWThreadGetSpecific(&gLastError);
-	#else
-		infoPtr = gLastErrorDataPtr;
-	#endif
 	
 	if(infoPtr == NULL) {
 		CWLog("No Error Pending");
@@ -151,12 +128,8 @@ CWBool _CWErrorHandleLast(const char *fileName, int line) {
 			
 		case CW_ERROR_OUT_OF_MEMORY:
 			__CW_ERROR_PRINT("Out of Memory");
-			#ifndef CW_SINGLE_THREAD
 				CWExitThread(); // note: we can manage this on per-thread basis: ex. we can
 								// kill some other thread if we are a manager thread.
-			#else
-				exit(1);
-			#endif
 			break;
 			
 		case CW_ERROR_WRONG_ARG:

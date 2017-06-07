@@ -1,41 +1,3 @@
-/*******************************************************************************************
- * Copyright (c) 2006-7 Laboratorio di Sistemi di Elaborazione e Bioingegneria Informatica *
- *                      Universita' Campus BioMedico - Italy                               *
- *                                                                                         *
- * This program is free software; you can redistribute it and/or modify it under the terms *
- * of the GNU General Public License as published by the Free Software Foundation; either  *
- * version 2 of the License, or (at your option) any later version.                        *
- *                                                                                         *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY         *
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 	       *
- * PARTICULAR PURPOSE. See the GNU General Public License for more details.                *
- *                                                                                         *
- * You should have received a copy of the GNU General Public License along with this       *
- * program; if not, write to the:                                                          *
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,                    *
- * MA  02111-1307, USA.                                                                    *
- *                                                                                         *
- * In addition, as a special exception, the copyright holders give permission to link the  *
- * code of portions of this program with the OpenSSL library under certain conditions as   *
- * described in each individual source file, and distribute linked combinations including  * 
- * the two. You must obey the GNU General Public License in all respects for all of the    *
- * code used other than OpenSSL.  If you modify file(s) with this exception, you may       *
- * extend this exception to your version of the file(s), but you are not obligated to do   *
- * so.  If you do not wish to do so, delete this exception statement from your version.    *
- * If you delete this exception statement from all source files in the program, then also  *
- * delete it here.                                                                         *
- * 
- * --------------------------------------------------------------------------------------- *
- * Project:  Capwap                                                                        *
- *                                                                                         *
- * Author :  Ludovico Rossi (ludo@bluepixysw.com)                                          *  
- *           Del Moro Andrea (andrea_delmoro@libero.it)                                    *
- *           Giovannini Federica (giovannini.federica@gmail.com)                           *
- *           Massimo Vellucci (m.vellucci@unicampus.it)                                    *
- *           Mauro Bisson (mauro.bis@gmail.com)                                            *
- *******************************************************************************************/
-
- 
 #ifndef __CAPWAP_WTPProtocol_HEADER__
 #define __CAPWAP_WTPProtocol_HEADER__
 
@@ -77,9 +39,8 @@ typedef struct {
 	CWProtocolResultCode code;
 	ACIPv4ListValues ACIPv4ListInfo;
 	ACIPv6ListValues ACIPv6ListInfo;
+
 	/*
-	 * Elena Agostini - 02/2014
-	 *
 	 * ECN Support Msg Elem MUST be included in Join Request/Response Messages
 	 */
 	int ECNSupport;
@@ -107,6 +68,9 @@ typedef struct {
 
 /*__________________________________________________________*/
 /*  *******************___PROTOTYPES___*******************  */
+
+/* Encoder */
+
 CWBool CWAssembleMsgElemACName(CWProtocolMessage *msgPtr);				// 4
 CWBool CWAssembleMsgElemACNameWithIndex(CWProtocolMessage *msgPtr);			// 5
 CWBool CWAssembleMsgElemDataTransferData(CWProtocolMessage *msgPtr, int data_type);	//13
@@ -119,21 +83,13 @@ CWBool CWAssembleMsgElemWTPDescriptor(CWProtocolMessage *msgPtr);			//36
 CWBool CWAssembleMsgElemWTPFrameTunnelMode(CWProtocolMessage *msgPtr);			//38
 CWBool CWAssembleMsgElemWTPIPv4Address(CWProtocolMessage *msgPtr);			//39
 CWBool CWAssembleMsgElemWTPMACType(CWProtocolMessage *msgPtr);				//40
-CWBool CWAssembleMsgElemWTPRadioInformation(CWProtocolMessage *msgPtr, int radioID, char radioType); //1048
-CWBool CWAssembleMsgElemSupportedRates(CWProtocolMessage *msgPtr, int radioID,char * suppRates, int lenSuppRates);				//1040
-CWBool CWAssembleMsgElemMACOperation(CWProtocolMessage *msgPtr, int radioID, int fragmentationTreshold, int rtsThreshold, char shortRetry, char longRetry, int txMSDU, int rxMSDU); //1030
-CWBool CWAssembleMsgElemMultiDomainCapability(CWProtocolMessage *msgPtr, int radioID, int firstChannel, int numChannels, int maxTxPower);					//1032
 CWBool CWAssembleMsgElemWTPName(CWProtocolMessage *msgPtr);				//41
 CWBool CWAssembleMsgElemWTPOperationalStatistics(CWProtocolMessage *msgPtr,int radio);	//42
 CWBool CWAssembleMsgElemWTPRadioStatistics(CWProtocolMessage *msgPtr,int radio);	//43
 CWBool CWAssembleMsgElemWTPRebootStatistics(CWProtocolMessage *msgPtr);			//44
-//Elena Agostini - 11/2014: Delete Station Msg Elem
-//Elena Agostini - 02/2014: ECN Support Msg Elem MUST be included in Join Request/Response Messages
-CWBool CWAssembleMsgElemECNSupport(CWProtocolMessage *msgPtr);
-//CWBool CWAssembleMsgElemWTPStaticIPInfo(CWProtocolMessage *msgPtr);			//45
-//CWBool CWAssembleMsgElemWTPRadioInformation(CWProtocolMessage *msgPtr);	
+CWBool CWAssembleMsgElemECNSupport(CWProtocolMessage *msgPtr);					//53
 
-//---------------------------------------------------------/
+/* Decoder */
 CWBool CWParseACDescriptor(CWProtocolMessage *msgPtr, int len, CWACInfoValues *valPtr);					// 1
 CWBool CWParseACIPv4List(CWProtocolMessage *msgPtr, int len, ACIPv4ListValues *valPtr);					// 2
 CWBool CWParseACIPv6List(CWProtocolMessage *msgPtr, int len, ACIPv6ListValues *valPtr);					// 3
@@ -143,16 +99,11 @@ CWBool CWParseCWTimers (CWProtocolMessage *msgPtr, int len, CWProtocolConfigureR
 CWBool CWParseDecryptErrorReportPeriod (CWProtocolMessage *msgPtr, int len, WTPDecryptErrorReportValues *valPtr);	//16 
 CWBool CWParseIdleTimeout (CWProtocolMessage *msgPtr, int len, CWProtocolConfigureResponseValues *valPtr);		//26 
 CWBool CWParseWTPFallback (CWProtocolMessage *msgPtr, int len, CWProtocolConfigureResponseValues *valPtr);		//37 
-CWBool CWParseWTPRadioInformation_FromAC(CWProtocolMessage *msgPtr, int len, char *valPtr);					// 1048
-/* Elena Agostini - 02/2014: ECN Support Msg Elem MUST be included in Join Request/Response Messages */
+
+/* ECN Support Msg Elem MUST be included in Join Request/Response Messages */
 CWBool CWParseACECNSupport(CWProtocolMessage *msgPtr, int len, int *valPtr);
-//Elena Agostini - 09/2014: IEEE Binding
-CWBool CWAssembleMsgElemAssignedWTPSSID(CWProtocolMessage *msgPtr, int radioID, int wlanID, char * bssid);
 
-//si trova in CWProtocol.h
-//CWBool CWParseACName(CWProtocolMessage *msgPtr, int len, char **valPtr);						// 4
 
-//---------------------------------------------------------/
 void CWWTPResetRebootStatistics(WTPRebootStatisticsInfo *rebootStatistics);
 
 int CWWTPGetDiscoveryType(void);

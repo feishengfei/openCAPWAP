@@ -618,7 +618,7 @@ CWBool CWCompareFragment(void *newFrag, void *oldFrag)
 // parse a sigle fragment. If it is the last fragment we need or thCWAssembleTransportHeaderKeepAliveDatae only fragment, return the reassembled message in
 // *reassembleMsg. If we need at lest one more fragment, save this fragment in the list. You then call this function again
 // with a new fragment and the same list untill we got all the fragments.
-CWBool CWProtocolParseFragment(char *buf, int readBytes, CWList *fragmentsListPtr, CWProtocolMessage *reassembledMsg, CWBool *dataFlagPtr, char *RadioMAC) {
+CWBool CWProtocolParseFragment(char *buf, int readBytes, CWList *fragmentsListPtr, CWProtocolMessage *reassembledMsg, CWBool *dataFlagPtr) {
 	
 	CWProtocolTransportHeaderValues values;
 	CWProtocolMessage msg;
@@ -627,7 +627,7 @@ CWBool CWProtocolParseFragment(char *buf, int readBytes, CWList *fragmentsListPt
 	msg.msg = buf;
 	msg.offset = 0;
 
-	if(!CWParseTransportHeader(&msg, &values, dataFlagPtr, RadioMAC)){
+	if(!CWParseTransportHeader(&msg, &values, dataFlagPtr)){
 		CWDebugLog("CWParseTransportHeader failed");
 		return CW_FALSE;
 	}
@@ -765,7 +765,7 @@ CWBool CWProtocolParseFragment(char *buf, int readBytes, CWList *fragmentsListPt
 }
 
 // Parse Transport Header
-CWBool CWParseTransportHeader(CWProtocolMessage *msgPtr, CWProtocolTransportHeaderValues *valuesPtr, CWBool *dataFlagPtr, char *RadioMAC) {
+CWBool CWParseTransportHeader(CWProtocolMessage *msgPtr, CWProtocolTransportHeaderValues *valuesPtr, CWBool *dataFlagPtr) {
 	
 	int transport4BytesLen; 
 	int val;
@@ -848,26 +848,11 @@ CWBool CWParseTransportHeader(CWProtocolMessage *msgPtr, CWProtocolTransportHead
 		}else{
 			CWLog("Todo: This should be a keep-alive data packet!!!!");
 		}
-		if( m ){
-			//CW_CREATE_OBJECT_ERR( valuesPtr->MACValuesPtr, CWMACTransportHeaderValues, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY,NULL););
-	
-			if (!CWParseTransportHeaderMACAddress(msgPtr, RadioMAC)){
-				//CW_FREE_OBJECT(valuesPtr->bindingValuesPtr);
-				return CW_FALSE;
-			}
-		}
 		
 	}else{
 		if(transport4BytesLen == 4 && optionalWireless == 1){
 			*dataFlagPtr = CW_TRUE;
- 		}else if( m ){
-			//CW_CREATE_OBJECT_ERR( valuesPtr->MACValuesPtr, CWMACTransportHeaderValues, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY,NULL););
-	
-			if (!CWParseTransportHeaderMACAddress(msgPtr, RadioMAC)){
-				//CW_FREE_OBJECT(valuesPtr->bindingValuesPtr);
-				return CW_FALSE;
-			}
-		}
+ 		}
  	}
 
 	CWDebugLog(NULL);
@@ -990,7 +975,8 @@ CWBool CWParseFormatMsgElem(CWProtocolMessage *completeMsg,unsigned short int *t
 	return CW_TRUE;
 }
 
-CWBool CWParseResultCode(CWProtocolMessage *msgPtr, int len, CWProtocolResultCode *valPtr) {
+CWBool CWParseResultCode(CWProtocolMessage *msgPtr, int len, CWProtocolResultCode *valPtr)
+{
 	CWParseMessageElementStart();
 	
 	*valPtr = CWProtocolRetrieve32(msgPtr);

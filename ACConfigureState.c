@@ -1,40 +1,3 @@
-/*******************************************************************************************
- * Copyright (c) 2006-7 Laboratorio di Sistemi di Elaborazione e Bioingegneria Informatica *
- *                      Universita' Campus BioMedico - Italy                               *
- *                                                                                         *
- * This program is free software; you can redistribute it and/or modify it under the terms *
- * of the GNU General Public License as published by the Free Software Foundation; either  *
- * version 2 of the License, or (at your option) any later version.                        *
- *                                                                                         *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY         *
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 	   *
- * PARTICULAR PURPOSE. See the GNU General Public License for more details.                *
- *                                                                                         *
- * You should have received a copy of the GNU General Public License along with this       *
- * program; if not, write to the:                                                          *
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,                    *
- * MA  02111-1307, USA.                                                                    *
- *                                                                                         *
- * In addition, as a special exception, the copyright holders give permission to link the  *
- * code of portions of this program with the OpenSSL library under certain conditions as   *
- * described in each individual source file, and distribute linked combinations including  * 
- * the two. You must obey the GNU General Public License in all respects for all of the    *
- * code used other than OpenSSL.  If you modify file(s) with this exception, you may       *
- * extend this exception to your version of the file(s), but you are not obligated to do   *
- * so.  If you do not wish to do so, delete this exception statement from your version.    *
- * If you delete this exception statement from all source files in the program, then also  *
- * delete it here.                                                                         *
- *                                                                                         *
- * --------------------------------------------------------------------------------------- *
- * Project:  Capwap                                                                        *
- *                                                                                         *
- * Author :  Ludovico Rossi (ludo@bluepixysw.com)                                          *  
- *           Del Moro Andrea (andrea_delmoro@libero.it)                                    *
- *           Giovannini Federica (giovannini.federica@gmail.com)                           *
- *           Massimo Vellucci (m.vellucci@unicampus.it)                                    *
- *           Mauro Bisson (mauro.bis@gmail.com)                                            *
- *******************************************************************************************/
-
 #include "CWAC.h"
 
 #ifdef DMALLOC
@@ -51,19 +14,13 @@ CWBool CWAssembleConfigureResponse(CWProtocolMessage **messagesPtr,
 CWBool CWParseConfigureRequestMessage(char *msg,
 				      int len,
 				      int *seqNumPtr,
-				      CWProtocolConfigureRequestValues *valuesPtr, char*, char*);
+				      CWProtocolConfigureRequestValues *valuesPtr);
 
 CWBool CWSaveConfigureRequestMessage(CWProtocolConfigureRequestValues *configureRequest,
 				     CWWTPProtocolManager *WTPProtocolManager);
 
 
 CWBool ACEnterConfigure(int WTPIndex, CWProtocolMessage *msgPtr) {
-
-	/*** tmp Radio Info ***/
-	char tmp_RadioInformationABGN;
-	char tmp_SuppRates[8];
-	char tmp_MultiDomCapa[6];
-	
 
 	int seqNum;
 	CWProtocolConfigureRequestValues configureRequest;
@@ -74,9 +31,8 @@ CWBool ACEnterConfigure(int WTPIndex, CWProtocolMessage *msgPtr) {
 	if(!(CWParseConfigureRequestMessage(msgPtr->msg, 
 										msgPtr->offset, 
 										&seqNum, 
-										&configureRequest,
-										&tmp_RadioInformationABGN,
-										tmp_MultiDomCapa))) {
+										&configureRequest
+										))) {
 		/* note: we can kill our thread in case of out-of-memory 
 		 * error to free some space.
 		 * we can see this just calling CWErrorGetLastErrorCode()
@@ -90,12 +46,6 @@ CWBool ACEnterConfigure(int WTPIndex, CWProtocolMessage *msgPtr) {
 		return CW_FALSE;
 	}
 	
-	
-	//Elena Agostini note: useless?
-	/* Store Radio Info in gWTPs */
-	gWTPs[WTPIndex].RadioInformationABGN = tmp_RadioInformationABGN;
-	memcpy( gWTPs[WTPIndex].SuppRates, tmp_SuppRates, 8 );
-	memcpy( gWTPs[WTPIndex].MultiDomCapa, tmp_MultiDomCapa, 6);
 	
 	/* Store Radio Info in gWTPs */
 	
@@ -122,12 +72,6 @@ CWBool ACEnterConfigure(int WTPIndex, CWProtocolMessage *msgPtr) {
 		CWCloseThread();
 	}
 	
-	/* Elena Agostini: 09/2014 IEEE 802.11 Binding */
-/*	if(!ACEnterIEEEConfiguration(WTPIndex, NULL))
-		return CW_FALSE;
-		
-	gWTPs[WTPIndex].currentState = CW_ENTER_IEEEE_CONFIGURATION;
-*/
 	gWTPs[WTPIndex].currentState = CW_ENTER_DATA_CHECK;
 	return CW_TRUE;
 }
@@ -135,9 +79,8 @@ CWBool ACEnterConfigure(int WTPIndex, CWProtocolMessage *msgPtr) {
 CWBool CWParseConfigureRequestMessage(char *msg,
 				      int len,
 				      int *seqNumPtr,
-				      CWProtocolConfigureRequestValues *valuesPtr,
-				      char *tmp_RadioInformationABGN,
-				      char *tmp_MultiDomCapa) {
+				      CWProtocolConfigureRequestValues *valuesPtr)
+{
 
 	CWControlHeaderValues controlVal;
 	int i,j;
@@ -215,11 +158,6 @@ CWBool CWParseConfigureRequestMessage(char *msg,
 								valuesPtr->WTPRebootStatistics))) 
 					/* will be handled by the caller */
 					return CW_FALSE;
-				break;
-			
-			//Elena Agostini: TODO. Without AC logic, save these values is useless
-			case CW_MSG_ELEMENT_IEEE80211_MAC_OPERATION_CW_TYPE:
-				completeMsg.offset += elemLen;
 				break;
 			
 			default:
