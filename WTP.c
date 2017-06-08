@@ -559,11 +559,14 @@ int main (int argc, const char * argv[])
 	//CWLogInitFile(WTP_LOG_FILE_NAME);
 
 	CWErrorHandlingInitLib();
+
+	/*
 	if(!CWParseSettingsFile()){
 		//Elena: fprintf
 		fprintf(stderr, "Can't start WTP %d\n", __LINE__);
 		exit(1);
 	}
+	*/
 	
 	//Elena Agostini - 05/2014
 	CWLogInitFile(wtpLogFile);

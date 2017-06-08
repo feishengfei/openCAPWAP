@@ -49,7 +49,6 @@
 
 CWBool CWWTPManageGenericRunMessage(CWProtocolMessage *msgPtr);
 
-CWBool CWWTPCheckForBindingFrame();
 
 CWBool CWWTPCheckForWTPEventRequest(int eventType);
 CWBool CWParseWTPEventResponseMessage(char *msg,
@@ -449,7 +448,6 @@ CWStateTransition CWWTPEnterRun() {
 		tv.tv_usec = 100*1000;
 		select(0, NULL, NULL, NULL, &tv);
 		CWBool bReceivePacket = CW_FALSE;
-		CWBool bReveiveBinding = CW_FALSE;
 		CWBool gWTPDataChannelLocalFlag = CW_FALSE;
 		CWBool gWTPExitRunEchoLocal = CW_FALSE;
 		
@@ -508,7 +506,6 @@ CWStateTransition CWWTPEnterRun() {
 		}*/
 		
 		bReceivePacket = ((CWGetCountElementFromSafeList(gPacketReceiveList) != 0) ? CW_TRUE : CW_FALSE);
-		bReveiveBinding = ((CWGetCountElementFromSafeList(gFrameList) != 0) ? CW_TRUE : CW_FALSE);
 
 		CWThreadMutexUnlock(&gInterfaceMutex);
 
@@ -542,8 +539,6 @@ CWStateTransition CWWTPEnterRun() {
 				}
 			}
 		}
-		if (bReveiveBinding)
-			CWWTPCheckForBindingFrame();
 	}
 
 	/* Elena Agostini - 07/2014 */

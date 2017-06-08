@@ -74,11 +74,6 @@ extern char gBoardReversionNo;
 extern char **gCWACAddresses;
 extern int gCWACCount;
 
-//Elena Agostini - 07/2014: nl80211 support
-extern int gPhyInterfaceCount;
-extern char ** gPhyInterfaceName;
-extern int * gPhyInterfaceIndex;
-
 /*
  * Elena Agostini - 02/2014
  *
@@ -185,7 +180,6 @@ CWBool CWAssembleWTPEventRequest(CWProtocolMessage **messagesPtr,
 
 CW_THREAD_RETURN_TYPE CWWTPReceiveDtlsPacket(void *arg);
 CW_THREAD_RETURN_TYPE CWWTPReceiveDataPacket(void *arg);
-CWBool CWWTPCheckForBindingFrame();
 
 /* in WTPProtocol_User.c */
 CWBool CWWTPGetACNameWithIndex (CWACNamesWithIndex *ACsInfo);

@@ -46,7 +46,7 @@
 /*  *******************___CONSTANTS___*******************  */
 
 // to be defined
-#define     	MAX_UDP_PACKET_SIZE					65536
+#define     MAX_UDP_PACKET_SIZE					65536
 #define		CW_CONTROL_PORT						5246
 #define		CW_DATA_PORT						5247
 #define		CW_PROTOCOL_VERSION					0
@@ -162,10 +162,6 @@
 #define		CW_MSG_TYPE_VALUE_STATION_CONFIGURATION_REQUEST		25
 #define		CW_MSG_TYPE_VALUE_STATION_CONFIGURATION_RESPONSE	26
 
-// IEEE 802.11 Binding Type
-#define		CW_MSG_TYPE_VALUE_WLAN_CONFIGURATION_REQUEST		3398913
-#define		CW_MSG_TYPE_VALUE_WLAN_CONFIGURATION_RESPONSE		3398914
-
 // Message Elements Type Values
 #define 	CW_MSG_ELEMENT_AC_DESCRIPTOR_CW_TYPE			1
 #define 	CW_MSG_ELEMENT_AC_IPV4_LIST_CW_TYPE			2
@@ -218,8 +214,6 @@
 #define 	CW_MSG_ELEMENT_WTP_REBOOT_STATISTICS_CW_TYPE		48
 #define 	CW_MSG_ELEMENT_WTP_STATIC_IP_CW_TYPE			49
 /*
- * Elena Agostini - 02/2014
- *
  * ECN Support Msg Elem MUST be included in Join Request/Response Messages
  */
 #define 	CW_MSG_ELEMENT_ECN_SUPPORT_CW_TYPE			53
@@ -248,7 +242,6 @@
 	#define		CW_JOIN_INTERVAL_DEFAULT 	60
 #endif
 
-//Elena TORESET
 #ifdef CW_DEBUGGING
 	#define		CW_CHANGE_STATE_INTERVAL_DEFAULT 50//10
 #else
@@ -265,7 +258,6 @@
 	#define		CW_NEIGHBORDEAD_INTERVAL_DEFAULT	70
 	#define		CW_NEIGHBORDEAD_RESTART_DISCOVERY_DELTA_DEFAULT	((CW_NEIGHBORDEAD_INTERVAL_DEFAULT) + 40)
 /*
- * Elena Agostini - 03/2014
  * DataChannel Dead Timer && Echo retransmit
  */
 	#define		CW_DATACHANNELDEAD_INTERVAL_DEFAULT 100
@@ -354,8 +346,6 @@ typedef struct {
 	CWProtocolMessage *msgElems;
 	int fragmentsNum;
 } CWPendingRequestMessage;
-
-#include "CWBinding.h"
 
 typedef struct {
 	int payloadType;

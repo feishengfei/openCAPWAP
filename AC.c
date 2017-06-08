@@ -134,12 +134,6 @@ void CWACInit() {
 	
 	CWErrorHandlingInitLib();
 	
-	if(!CWParseSettingsFile())
-	{
-		CWLog("Can't start AC %d\n", __LINE__);
-		exit(1);
-	}
-	
 	//Elena Agostini - 07/2014: initialize listGenericThreadDTLSData
 	for(index=0; index < WTP_MAX_TMP_THREAD_DTLS_DATA; index++)
 		listGenericThreadDTLSData[index] = NULL;

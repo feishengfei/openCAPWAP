@@ -1,41 +1,3 @@
-/*******************************************************************************************
- * Copyright (c) 2006-7 Laboratorio di Sistemi di Elaborazione e Bioingegneria Informatica *
- *                      Universita' Campus BioMedico - Italy                               *
- *                                                                                         *
- * This program is free software; you can redistribute it and/or modify it under the terms *
- * of the GNU General Public License as published by the Free Software Foundation; either  *
- * version 2 of the License, or (at your option) any later version.                        *
- *                                                                                         *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY         *
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 	       *
- * PARTICULAR PURPOSE. See the GNU General Public License for more details.                *
- *                                                                                         *
- * You should have received a copy of the GNU General Public License along with this       *
- * program; if not, write to the:                                                          *
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,                    *
- * MA  02111-1307, USA.                                                                    *
- *                                                                                         *
- * In addition, as a special exception, the copyright holders give permission to link the  *
- * code of portions of this program with the OpenSSL library under certain conditions as   *
- * described in each individual source file, and distribute linked combinations including  * 
- * the two. You must obey the GNU General Public License in all respects for all of the    *
- * code used other than OpenSSL.  If you modify file(s) with this exception, you may       *
- * extend this exception to your version of the file(s), but you are not obligated to do   *
- * so.  If you do not wish to do so, delete this exception statement from your version.    *
- * If you delete this exception statement from all source files in the program, then also  *
- * delete it here.                                                                         *
- * 
- * --------------------------------------------------------------------------------------- *
- * Project:  Capwap                                                                        *
- *                                                                                         *
- * Author :  Ludovico Rossi (ludo@bluepixysw.com)                                          *  
- *           Del Moro Andrea (andrea_delmoro@libero.it)                                    *
- *           Giovannini Federica (giovannini.federica@gmail.com)                           *
- *           Massimo Vellucci (m.vellucci@unicampus.it)                                    *
- *           Mauro Bisson (mauro.bis@gmail.com)                                            *
- *******************************************************************************************/
-
-
 #include "CWCommon.h"
 pthread_mutex_t gRADIO_MAC_mutex;
 
@@ -181,7 +143,9 @@ CWBool CWAssembleMsgElem(CWProtocolMessage *msgPtr, unsigned int type) {
 }
 
 // Assembles the Transport Header
-CWBool CWAssembleTransportHeader(CWProtocolMessage *transportHdrPtr, CWProtocolTransportHeaderValues *valuesPtr) {
+CWBool CWAssembleTransportHeader(CWProtocolMessage *transportHdrPtr,
+	CWProtocolTransportHeaderValues *valuesPtr)
+{
 	
 	char radio_mac_present = 0;
 	int i;
@@ -197,12 +161,6 @@ CWBool CWAssembleTransportHeader(CWProtocolMessage *transportHdrPtr, CWProtocolT
 	unsigned int val = 0;
 	if(transportHdrPtr == NULL || valuesPtr == NULL) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
 	
-#if 0
-	if(valuesPtr->bindingValuesPtr != NULL)
-		{CW_CREATE_PROTOCOL_MESSAGE(*transportHdrPtr,gMaxCAPWAPHeaderSizeBinding+radio_mac_present, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););}
-	// meaningful bytes of the header (no wirless header and MAC address)
-	else 
-#endif
 		{CW_CREATE_PROTOCOL_MESSAGE(*transportHdrPtr,8 + radio_mac_present, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););}	 
 
 	CWSetField32(val, 
@@ -314,104 +272,99 @@ CWBool CWAssembleTransportHeader(CWProtocolMessage *transportHdrPtr, CWProtocolT
 }
 
 // Assembles the Transport Header
-CWBool CWAssembleTransportHeaderKeepAliveData(CWProtocolMessage *transportHdrPtr, CWProtocolTransportHeaderValues *valuesPtr, int keepAlive)
+CWBool CWAssembleTransportHeaderKeepAliveData(CWProtocolMessage *transportHdrPtr,
+	CWProtocolTransportHeaderValues *valuesPtr,
+	int keepAlive)
 {
-	
+
 	unsigned int val = 0;
 	if(transportHdrPtr == NULL || valuesPtr == NULL) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
-	
-/*	if(valuesPtr->bindingValuesPtr != NULL)
-		{CW_CREATE_PROTOCOL_MESSAGE(*transportHdrPtr,gMaxCAPWAPHeaderSizeBinding, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););}
-	else {CW_CREATE_PROTOCOL_MESSAGE(*transportHdrPtr,8 , return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););}	 // meaningful bytes of the header (no wirless header and MAC address)
-*/
 
-CW_CREATE_PROTOCOL_MESSAGE(*transportHdrPtr,8 , return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-	
+	CW_CREATE_PROTOCOL_MESSAGE(*transportHdrPtr,8 , return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
+
 	CWSetField32(val, 
-		     CW_TRANSPORT_HEADER_VERSION_START,
-		     CW_TRANSPORT_HEADER_VERSION_LEN,
-		     CW_PROTOCOL_VERSION); // current version of CAPWAP
+			CW_TRANSPORT_HEADER_VERSION_START,
+			CW_TRANSPORT_HEADER_VERSION_LEN,
+			CW_PROTOCOL_VERSION); // current version of CAPWAP
 	CWSetField32(val,
-		     CW_TRANSPORT_HEADER_TYPE_START,
-		     CW_TRANSPORT_HEADER_TYPE_LEN,
-		     (valuesPtr->payloadType == CW_PACKET_PLAIN) ? 0 : 1);
+			CW_TRANSPORT_HEADER_TYPE_START,
+			CW_TRANSPORT_HEADER_TYPE_LEN,
+			(valuesPtr->payloadType == CW_PACKET_PLAIN) ? 0 : 1);
 
-/*
- * Elena Agostini - 03/2014
- * 
- *Try to fix Malformed KeepAlive 
- */
- 
-		CWSetField32(val,
-			     CW_TRANSPORT_HEADER_HLEN_START,
-			     CW_TRANSPORT_HEADER_HLEN_LEN,
-			     2);
-
-		CWSetField32(val,
-		     CW_TRANSPORT_HEADER_RID_START,
-		     CW_TRANSPORT_HEADER_RID_LEN,
-		     0); // only one radio per WTP?
-	
-		CWSetField32(val,
-		     CW_TRANSPORT_HEADER_WBID_START,
-		     CW_TRANSPORT_HEADER_WBID_LEN,
-		     1); // Wireless Binding ID
-	
-		CWSetField32(val,
-		     CW_TRANSPORT_HEADER_T_START,
-		     CW_TRANSPORT_HEADER_T_LEN,
-		     0);
+	/*
+	 *Try to fix Malformed KeepAlive 
+	 */
 
 	CWSetField32(val,
-		     CW_TRANSPORT_HEADER_F_START,
-		     CW_TRANSPORT_HEADER_F_LEN,
-		     valuesPtr->isFragment); // is fragment
+			CW_TRANSPORT_HEADER_HLEN_START,
+			CW_TRANSPORT_HEADER_HLEN_LEN,
+			2);
 
 	CWSetField32(val,
-		     CW_TRANSPORT_HEADER_L_START,
-		     CW_TRANSPORT_HEADER_L_LEN,
-		     valuesPtr->last); // last fragment
-	
-
-		CWSetField32(val,
-			     CW_TRANSPORT_HEADER_W_START,
-			     CW_TRANSPORT_HEADER_W_LEN,
-			     0);
+			CW_TRANSPORT_HEADER_RID_START,
+			CW_TRANSPORT_HEADER_RID_LEN,
+			0); // only one radio per WTP?
 
 	CWSetField32(val,
-		     CW_TRANSPORT_HEADER_M_START,
-		     CW_TRANSPORT_HEADER_M_LEN,
-		     0); // no radio MAC address
+			CW_TRANSPORT_HEADER_WBID_START,
+			CW_TRANSPORT_HEADER_WBID_LEN,
+			1); // Wireless Binding ID
 
 	CWSetField32(val,
-		     CW_TRANSPORT_HEADER_K_START,
-		     CW_TRANSPORT_HEADER_K_LEN,
-		     keepAlive); // Keep alive flag
- 
- 	CWSetField32(val,
- 		     CW_TRANSPORT_HEADER_FLAGS_START,
-		     CW_TRANSPORT_HEADER_FLAGS_LEN,
-		     0); // required
+			CW_TRANSPORT_HEADER_T_START,
+			CW_TRANSPORT_HEADER_T_LEN,
+			0);
+
+	CWSetField32(val,
+			CW_TRANSPORT_HEADER_F_START,
+			CW_TRANSPORT_HEADER_F_LEN,
+			valuesPtr->isFragment); // is fragment
+
+	CWSetField32(val,
+			CW_TRANSPORT_HEADER_L_START,
+			CW_TRANSPORT_HEADER_L_LEN,
+			valuesPtr->last); // last fragment
+
+
+	CWSetField32(val,
+			CW_TRANSPORT_HEADER_W_START,
+			CW_TRANSPORT_HEADER_W_LEN,
+			0);
+
+	CWSetField32(val,
+			CW_TRANSPORT_HEADER_M_START,
+			CW_TRANSPORT_HEADER_M_LEN,
+			0); // no radio MAC address
+
+	CWSetField32(val,
+			CW_TRANSPORT_HEADER_K_START,
+			CW_TRANSPORT_HEADER_K_LEN,
+			keepAlive); // Keep alive flag
+
+	CWSetField32(val,
+			CW_TRANSPORT_HEADER_FLAGS_START,
+			CW_TRANSPORT_HEADER_FLAGS_LEN,
+			0); // required
 
 	CWProtocolStore32(transportHdrPtr, val);
 	// end of first 32 bits
-	
+
 	val = 0;
 
 	CWSetField32(val,
-		     CW_TRANSPORT_HEADER_FRAGMENT_ID_START,
-		     CW_TRANSPORT_HEADER_FRAGMENT_ID_LEN,
-		     valuesPtr->fragmentID); // fragment ID
-	
-	CWSetField32(val,
-		     CW_TRANSPORT_HEADER_FRAGMENT_OFFSET_START,
-		     CW_TRANSPORT_HEADER_FRAGMENT_OFFSET_LEN,
-		     valuesPtr->fragmentOffset); // fragment offset
+			CW_TRANSPORT_HEADER_FRAGMENT_ID_START,
+			CW_TRANSPORT_HEADER_FRAGMENT_ID_LEN,
+			valuesPtr->fragmentID); // fragment ID
 
 	CWSetField32(val,
-		     CW_TRANSPORT_HEADER_RESERVED_START,
-		     CW_TRANSPORT_HEADER_RESERVED_LEN,
-		     0); // required
+			CW_TRANSPORT_HEADER_FRAGMENT_OFFSET_START,
+			CW_TRANSPORT_HEADER_FRAGMENT_OFFSET_LEN,
+			valuesPtr->fragmentOffset); // fragment offset
+
+	CWSetField32(val,
+			CW_TRANSPORT_HEADER_RESERVED_START,
+			CW_TRANSPORT_HEADER_RESERVED_LEN,
+			0); // required
 
 	CWProtocolStore32(transportHdrPtr, val);
 	// end of second 32 bits

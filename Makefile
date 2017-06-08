@@ -19,7 +19,7 @@ RM = /bin/rm -f
 
 # list of generated object files for AC. 
 AC_OBJS = ACDiscoveryState.o ACJoinState.o ACConfigureState.o ACDataCheckState.o ACRunState.o ACRetransmission.o \
-		  ACConfigFile.o ACSettingsFile.o \
+		  ACConfigFile.o \
 		  ACProtocol.o ACProtocol_User.o \
 		  ACMainLoop.o ACMultiHomedSocket.o \
 		  AC.o
@@ -29,7 +29,7 @@ AC_OBJS = ACDiscoveryState.o ACJoinState.o ACConfigureState.o ACDataCheckState.o
 # list of generated object files for WTP.
 WTP_OBJS = WTPDiscoveryState.o WTPJoinState.o WTPConfigureState.o WTPDataCheckState.o WTPRunState.o \
 		   WTPSulkingState.o WTPRunStateCheck.o WTPRetransmission.o \
-		   WTPConfigFile.o WTPSettingsFile.o \
+		   WTPConfigFile.o \
 		   WTPProtocol.o WTPProtocol_User.o \
 		   WTP.o
 
