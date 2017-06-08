@@ -6,7 +6,6 @@
 #include "CWCommon.h"
 #include "ACMultiHomedSocket.h"
 #include "ACProtocol.h"
-#include "ACInterface.h"
 
 #include <ctype.h>
 #include <netinet/in.h>
@@ -94,7 +93,6 @@ typedef struct {
 	/**** ACInterface ****/
 	int interfaceResult;
 	CWBool interfaceCommandProgress;
-	int interfaceCommand;
 	CWThreadMutex interfaceSingleton;
 	CWThreadMutex interfaceMutex;
 	CWThreadCondition interfaceWait;

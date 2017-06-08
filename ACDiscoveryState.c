@@ -1,41 +1,3 @@
-/*******************************************************************************************
- * Copyright (c) 2006-7 Laboratorio di Sistemi di Elaborazione e Bioingegneria Informatica *
- *                      Universita' Campus BioMedico - Italy                               *
- *                                                                                         *
- * This program is free software; you can redistribute it and/or modify it under the terms *
- * of the GNU General Public License as published by the Free Software Foundation; either  *
- * version 2 of the License, or (at your option) any later version.                        *
- *                                                                                         *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY         *
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 	   *
- * PARTICULAR PURPOSE. See the GNU General Public License for more details.                *
- *                                                                                         *
- * You should have received a copy of the GNU General Public License along with this       *
- * program; if not, write to the:                                                          *
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,                    *
- * MA  02111-1307, USA.                                                                    *
- *                                                                                         *
- * In addition, as a special exception, the copyright holders give permission to link the  *
- * code of portions of this program with the OpenSSL library under certain conditions as   *
- * described in each individual source file, and distribute linked combinations including  * 
- * the two. You must obey the GNU General Public License in all respects for all of the    *
- * code used other than OpenSSL.  If you modify file(s) with this exception, you may       *
- * extend this exception to your version of the file(s), but you are not obligated to do   *
- * so.  If you do not wish to do so, delete this exception statement from your version.    *
- * If you delete this exception statement from all source files in the program, then also  *
- * delete it here.                                                                         *
- *                                                                                         *
- * --------------------------------------------------------------------------------------- *
- * Project:  Capwap                                                                        *
- *                                                                                         *
- * Author :  Ludovico Rossi (ludo@bluepixysw.com)                                          *  
- *           Del Moro Andrea (andrea_delmoro@libero.it)                                    *
- *           Giovannini Federica (giovannini.federica@gmail.com)                           *
- *           Massimo Vellucci (m.vellucci@unicampus.it)                                    *
- *           Mauro Bisson (mauro.bis@gmail.com)                                            *
- *******************************************************************************************/
-
- 
 #include "CWAC.h"
 
 #ifdef DMALLOC
@@ -198,54 +160,24 @@ CWBool CWParseDiscoveryRequestMessage(char *msg,
 	
 	if(completeMsg.offset != len) return CWErrorRaise(CW_ERROR_INVALID_FORMAT, "Garbage at the End of the Message");
 	
-
-/*
-	// actually read each radio info
-	CW_CREATE_ARRAY_ERR((*valuesPtr).radios.radios, (*valuesPtr).radios.radiosCount, CWRadioInformationValues, 
-		return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-	i = 0;
-	
-	completeMsg.offset = offsetTillMessages;
-	while(i < (*valuesPtr).radios.radiosCount && (completeMsg.offset-offsetTillMessages) < controlVal.msgElemsLen) {
-		unsigned short int type=0;// = CWProtocolRetrieve32(&completeMsg);
-		unsigned short int len=0;// = CWProtocolRetrieve16(&completeMsg);
-		
-		CWParseFormatMsgElem(&completeMsg,&type,&len);		
-
-		switch(type) {
-			case CW_MSG_ELEMENT_WTP_RADIO_INFO_CW_TYPE:
-				if(!(CWParseWTPRadioInfo(&completeMsg, len, &(valuesPtr->radios), i))) return CW_FALSE; // will be handled by the caller
-				i++;
-				break;
-			default:
-				completeMsg.offset += len;
-				break;
-		}
-	}
-*/
 	return CW_TRUE;
 }
 
-void CWDestroyDiscoveryRequestValues(CWDiscoveryRequestValues *valPtr) {
-
+void CWDestroyDiscoveryRequestValues(CWDiscoveryRequestValues *valPtr)
+{
 	int i;
-	
+
 	if(valPtr == NULL) return;
 	for(i = 0; i < (valPtr->WTPDescriptor.vendorInfos).vendorInfosCount; i++) {
 
 		CW_FREE_OBJECT(((valPtr->WTPDescriptor.vendorInfos).vendorInfos)[i].valuePtr);
 	}
 	CW_FREE_OBJECT((valPtr->WTPDescriptor.vendorInfos).vendorInfos);
-	
-	/* 
-         * BUG ML11
-         *
-         * 10/10/2009 - Donato Capitella 
-         */
-        for(i = 0; i < valPtr->WTPBoardData.vendorInfosCount; i++) {
-                CW_FREE_OBJECT(valPtr->WTPBoardData.vendorInfos[i].valuePtr);
-        }
-        CW_FREE_OBJECT(valPtr->WTPBoardData.vendorInfos);
-	
-			/*CW_FREE_OBJECT((valPtr->radios).radios);*/
+
+	for(i = 0; i < valPtr->WTPBoardData.vendorInfosCount; i++) {
+		CW_FREE_OBJECT(valPtr->WTPBoardData.vendorInfos[i].valuePtr);
+	}
+	CW_FREE_OBJECT(valPtr->WTPBoardData.vendorInfos);
+
+	/*CW_FREE_OBJECT((valPtr->radios).radios);*/
 }

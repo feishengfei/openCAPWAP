@@ -17,11 +17,7 @@
 	CWRadiosAdminInfo radioAdminInfo;
 	int StatisticsTimer;
 	CWWTPVendorInfos WTPBoardData;
-	//CWRadiosInformation WTPRadioInfo;	
 	WTPRebootStatisticsInfo *WTPRebootStatistics;
-	
-	void* bindingValuesPtr;
-	
  } CWWTPProtocolManager;
 
 typedef struct {
@@ -111,10 +107,6 @@ CWBool CWAssembleMsgElemACDescriptor(CWProtocolMessage *msgPtr);			// 1
 CWBool CWAssembleMsgElemACIPv4List(CWProtocolMessage *msgPtr);				// 2
 CWBool CWAssembleMsgElemACIPv6List(CWProtocolMessage *msgPtr);				// 3
 CWBool CWAssembleMsgElemACName(CWProtocolMessage *msgPtr);				// 4
-CWBool CWAssembleMsgElemAddStation(int radioID,CWProtocolMessage *msgPtr,unsigned char* StationMacAddr);		// 8
-//Elena Agostini
-//CWBool CWAssembleMsgElem80211Station(int radioID, int wlanID, CWProtocolMessage *msgPtr, CWFrameAssociationResponse associationResponse);
-CWBool CWAssembleMsgElemDeleteStation(int radioID,CWProtocolMessage *msgPtr,unsigned char* StationMacAddr);		// 8
 /*
  * Elena Agostini - 03/2014: Add AC local IPv4 Address Msg. Elem.
  */
@@ -125,8 +117,6 @@ CWBool CWAssembleMsgElemCWTimer(CWProtocolMessage *msgPtr);				//12
 CWBool CWAssembleMsgElemDecryptErrorReportPeriod(CWProtocolMessage *msgPtr);		//16
 CWBool CWAssembleMsgElemIdleTimeout(CWProtocolMessage *msgPtr);				//23
 CWBool CWAssembleMsgElemWTPFallback(CWProtocolMessage *msgPtr);				//37
-/* Elena Agostini-08/2014: Add MultiDomain Capability message element for nl80211 support */
-CWBool CWAssembleMsgElemACWTPMultiDomainCapability(CWProtocolMessage *msgPtr, int radioID, int firstChannel, int numChannels, int maxTxPower);
 /* Elena Agostini - 02/2014: ECN Support Msg Elem MUST be included in Join Request/Response Messages */
 CWBool CWAssembleMsgElemECNSupport(CWProtocolMessage *msgPtr);
 

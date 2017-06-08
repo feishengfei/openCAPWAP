@@ -355,7 +355,6 @@ typedef struct {
 	int fragmentID;
 	int fragmentOffset;
 	int keepAlive;
-	//CWBindingTransportHeaderValues *bindingValuesPtr;
 } CWProtocolTransportHeaderValues;
 
 typedef struct {
@@ -617,8 +616,6 @@ typedef struct {
 	unsigned int wirelessLinkFramesPerSec;
 
 	WTPRadioStatisticsInfo statistics;	
-	
-	void* bindingValuesPtr;
 } CWWTPRadioInfoValues;
 
 typedef struct {

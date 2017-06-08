@@ -1,42 +1,3 @@
-/************************************************************************************************
- * Copyright (c) 2006-2009 Laboratorio di Sistemi di Elaborazione e Bioingegneria Informatica	*
- *                          Universita' Campus BioMedico - Italy								*
- *																								*
- * This program is free software; you can redistribute it and/or modify it under the terms		*
- * of the GNU General Public License as published by the Free Software Foundation; either		*
- * version 2 of the License, or (at your option) any later version.								*
- *																								*
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY				*
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A				*
- * PARTICULAR PURPOSE. See the GNU General Public License for more details.						*
- *																								*
- * You should have received a copy of the GNU General Public License along with this			*
- * program; if not, write to the:																*
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,							*
- * MA  02111-1307, USA.					
- * 
- * In addition, as a special exception, the copyright holders give permission to link the  *
- * code of portions of this program with the OpenSSL library under certain conditions as   *
- * described in each individual source file, and distribute linked combinations including  * 
- * the two. You must obey the GNU General Public License in all respects for all of the    *
- * code used other than OpenSSL.  If you modify file(s) with this exception, you may       *
- * extend this exception to your version of the file(s), but you are not obligated to do   *
- * so.  If you do not wish to do so, delete this exception statement from your version.    *
- * If you delete this exception statement from all source files in the program, then also  *
- * delete it here.                                                                         *
- **																								*
- * -------------------------------------------------------------------------------------------- *
- * Project:  Capwap																				*
- *																								*
- * Authors : Ludovico Rossi (ludo@bluepixysw.com)												*  
- *           Del Moro Andrea (andrea_delmoro@libero.it)											*
- *           Giovannini Federica (giovannini.federica@gmail.com)								*
- *           Massimo Vellucci (m.vellucci@unicampus.it)											*
- *           Mauro Bisson (mauro.bis@gmail.com)													*
- *           Daniele De Sanctis (danieledesanctis@gmail.com)									* 
- *	         Antonio Davoli (antonio.davoli@gmail.com)											*
- ************************************************************************************************/
-
 #include "CWAC.h"
 #include "CWStevens.h"
 
@@ -70,7 +31,7 @@ __inline__ genericHandshakeThreadPtr CWWTPThreadGenericByAddress(CWNetworkLev4Ad
 void CWACSetNewGenericHandshakeDataThread(genericHandshakeThreadPtr * genericThreadStruct, CWNetworkLev4Address * addrPtr, CWSocket sock, char * pData, int readBytes);
 
 void CWACSetNewGenericHandshakeDataThread(genericHandshakeThreadPtr * genericThreadStruct, CWNetworkLev4Address * addrPtr, CWSocket sock, char * pData, int readBytes) {
-	/* Se nessuno sta gestendo l'handshake creo un nuovo thread generico */
+	/* If no one is handling the handshake I create a new generic thread */
 	
 	CW_CREATE_OBJECT_ERR((*genericThreadStruct), genericHandshakeThread, return; );
 	
@@ -124,14 +85,6 @@ void CWACEnterMainLoop() {
 		exit(1);
 	}
 	
-	/*
-	CWThread thread_interface;
-	if(!CWErr(CWCreateThread(&thread_interface, CWInterface, NULL))) {
-		CWLog("Error starting Interface Thread");
-		exit(1);
-	}
-	*/
-
 	CW_REPEAT_FOREVER {
 		/* CWACManageIncomingPacket will be called 
 		 * when a new packet is ready to be read 
@@ -183,7 +136,7 @@ void CWACManageIncomingPacket(CWSocket sock,
 #endif
 
 /*
- * Elena Agostini - 04/2014: generic handshake datachannel WTP
+ * generic handshake datachannel WTP
  */
 #ifdef CW_DTLS_DATA_CHANNEL
 		if( ((buf[0] & 0x0f) == CW_PACKET_CRYPT) && (dataFlag == CW_TRUE) )
@@ -260,7 +213,7 @@ void CWACManageIncomingPacket(CWSocket sock,
 		}
 		else
 		{
-			/* Elena Agostini - 04/2014: more WTPs with same IPs, different PORTs */
+			/* more WTPs with same IPs, different PORTs */
 			if(dataFlag == CW_TRUE)
 			{	
 					CWProtocolTransportHeaderValues values;
@@ -287,7 +240,7 @@ void CWACManageIncomingPacket(CWSocket sock,
 		}
 		
 #else		
-	/* Elena Agostini - 04/2014: more WTPs with same IPs, different PORTs */
+	/* more WTPs with same IPs, different PORTs */
 	if(dataFlag == CW_TRUE)
 	{	
 			CWProtocolTransportHeaderValues values;
@@ -424,7 +377,7 @@ void CWACManageIncomingPacket(CWSocket sock,
 			gWTPs[i].dataaddress.ss_family = AF_UNSPEC;
 			gWTPs[i].isNotFree = CW_TRUE;
 			gWTPs[i].isRequestClose = CW_FALSE;
-			/* Elena Agostini - 03/2014: DTLS Data Packet List */
+			/* DTLS Data Packet List */
 			gWTPs[i].sessionDataActive = CW_FALSE;
 			CWThreadMutexUnlock(&gWTPsMutex);
 
@@ -649,7 +602,6 @@ CW_THREAD_RETURN_TYPE CWManageWTP(void *arg) {
 	
 	/**** ACInterface ****/
 	gWTPs[i].interfaceCommandProgress = CW_FALSE;
-	gWTPs[i].interfaceCommand = NO_CMD;
 	CWDestroyThreadMutex(&gWTPs[i].interfaceMutex);	
 	CWCreateThreadMutex(&gWTPs[i].interfaceMutex);
 	CWDestroyThreadMutex(&gWTPs[i].interfaceSingleton);	
@@ -710,9 +662,9 @@ CW_THREAD_RETURN_TYPE CWManageWTP(void *arg) {
 
 		CWThreadMutexLock(&gWTPs[i].interfaceMutex);
 
-		while ((gWTPs[i].isRequestClose == CW_FALSE) &&
-		       (CWGetCountElementFromSafeList(gWTPs[i].packetReceiveList) == 0) &&
-		       (gWTPs[i].interfaceCommand == NO_CMD)) {
+		while ( (gWTPs[i].isRequestClose == CW_FALSE) &&
+		       (CWGetCountElementFromSafeList(gWTPs[i].packetReceiveList) == 0) )
+		{
 
 			 /*TODO: Check system */
 			CWWaitThreadCondition(&gWTPs[i].interfaceWait, 
@@ -918,15 +870,11 @@ CW_THREAD_RETURN_TYPE CWManageWTP(void *arg) {
 			CW_FREE_PROTOCOL_MESSAGE(msg);
 		}
 		else {
+			CWThreadMutexLock(&gWTPs[i].interfaceMutex);
 
-		  CWThreadMutexLock(&gWTPs[i].interfaceMutex);
-		  
-		  if (gWTPs[i].interfaceCommand != NO_CMD) {
-			
-			CWBool bResult = CW_FALSE;
-			
-				gWTPs[i].interfaceCommand = NO_CMD;
+			//if (gWTPs[i].interfaceCommand != NO_CMD) {
 
+				CWBool bResult = CW_FALSE;
 				if (bResult)
 					gWTPs[i].interfaceCommandProgress = CW_TRUE;
 				else {
@@ -934,7 +882,7 @@ CW_THREAD_RETURN_TYPE CWManageWTP(void *arg) {
 					CWSignalThreadCondition(&gWTPs[i].interfaceComplete);
 					CWDebugLog("Error sending command");
 				}
-			}
+			//}
 			CWThreadMutexUnlock(&gWTPs[i].interfaceMutex);
 		}
 		CWThreadSetSignals(SIG_UNBLOCK, 2, 

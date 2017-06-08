@@ -196,67 +196,6 @@ CWBool CWAssembleMsgElemACName(CWProtocolMessage *msgPtr) {
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 
-CWBool CWAssembleMsgElemAddStation(int radioID,CWProtocolMessage *msgPtr,unsigned char* StationMacAddr)
-{
-	const int add_Station_Length=8;
-	int Length=6;  //mac address length in bytes (48 bit)
-
-	// create message
-	CW_CREATE_PROTOCOL_MESSAGE(*msgPtr, add_Station_Length, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-	
-	CWProtocolStore8(msgPtr, radioID);
-	
-	CWProtocolStore8(msgPtr, Length);
-
-	CWProtocolStoreRawBytes(msgPtr,(char*)StationMacAddr,Length);
-	
-	
-	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_ADD_STATION_CW_TYPE);
-	
-}
-
-/*
-CWBool CWAssembleMsgElem80211Station(int radioID, int wlanID, CWProtocolMessage *msgPtr, CWFrameAssociationResponse associationResponse)
-{
-	// create message
-	CW_CREATE_PROTOCOL_MESSAGE(*msgPtr, CW_MSG_IEEE_STATION_LEN+associationResponse.supportedRatesLen, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-	
-	//RadioID
-	CWProtocolStore8(msgPtr, radioID);
-	//Ass ID
-	short int valueAssID = associationResponse.assID;
-	//valueAssID |= BIT0(14);
-	//valueAssID |= BIT0(15);
-	valueAssID -= 49152;
-	CWProtocolStore16(msgPtr, valueAssID);
-	//Flags
-	CWProtocolStore8(msgPtr, 0);
-	//Station MAC Address
-	CWProtocolStoreRawBytes(msgPtr,(char*)associationResponse.DA, ETH_ALEN);
-	//Capability
-	CWProtocolStore16(msgPtr, associationResponse.capabilityBit);
-	//WlanID
-	CWProtocolStore8(msgPtr, wlanID);
-	//Supported Rates
-	CWProtocolStoreRawBytes(msgPtr, associationResponse.supportedRates, associationResponse.supportedRatesLen);
-	
-	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_IEEE80211_STATION);
-	
-}
-*/
-
-CWBool CWAssembleMsgElemDeleteStation(int radioID,CWProtocolMessage *msgPtr,unsigned char* StationMacAddr){
-	const int delete_Station_Length=8;
-	int Length=6;  //mac address length in bytes (48 bit)
-
-	CW_CREATE_PROTOCOL_MESSAGE(*msgPtr, delete_Station_Length, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
-	CWProtocolStore8(msgPtr, radioID);
-	CWProtocolStore8(msgPtr, Length);
-	CWProtocolStoreRawBytes(msgPtr,(char*)StationMacAddr,Length);
-	
-	return CWAssembleMsgElem(msgPtr, CW_MSG_ELEMENT_DELETE_STATION_CW_TYPE);
-}
-
 
 CWBool CWAssembleMsgElemCWControlIPv4Addresses(CWProtocolMessage *msgPtr) {
 	int count, i;
