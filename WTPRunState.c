@@ -1675,12 +1675,6 @@ CWBool CWParseConfigurationUpdateRequest (char *msg,
 
 
 //		CWLog("Parsing Message Element: %u, elemLen: %u", elemType, elemLen);
-
-		if(CWBindingCheckType(elemType)) {
-
-			completeMsg.offset += elemLen;
-			continue;	
-		}						
 	}
 
 	if (completeMsg.offset != len) 

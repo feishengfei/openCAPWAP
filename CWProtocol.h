@@ -285,6 +285,8 @@
 	#define		CW_DATA_CHANNEL_KEEP_ALIVE_DEFAULT	30
 #endif
 
+extern const int gMaxCAPWAPHeaderSizeBinding;
+
 
 /*_________________________________________________________*/
 /*  *******************___VARIABLES___*******************  */
@@ -692,5 +694,13 @@ CWBool CWParseACName(CWProtocolMessage *msgPtr, int len, char **valPtr);
 CWBool CWParseWTPRadioOperationalState (CWProtocolMessage *msgPtr, int len, CWRadioOperationalInfoValues *valPtr);	//30
 CWBool CWParseResultCode(CWProtocolMessage *msgPtr, int len, CWProtocolResultCode *valPtr);			//31
 char * CWParseSessionID(CWProtocolMessage *msgPtr, int len);
+
+
+CWBool CWAssembleDataMessage(CWProtocolMessage **completeMsgPtr,
+		int *fragmentsNumPtr,
+		int PMTU,
+		CWProtocolMessage *frame,
+		int is_crypted,
+		int keepAlive);
 
 #endif

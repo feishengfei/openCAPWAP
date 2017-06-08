@@ -42,6 +42,8 @@ pthread_mutex_t gRADIO_MAC_mutex;
 #ifdef DMALLOC
 #include "../dmalloc-5.5.0/dmalloc.h"
 #endif
+
+const int gMaxCAPWAPHeaderSizeBinding = 16; // note: this include optional Wireless field
  
 static const int gCWIANATimes256 = CW_IANA_ENTERPRISE_NUMBER * 256;
 static const int gMaxDTLSHeaderSize = 25; // see http://crypto.stanford.edu/~nagendra/papers/dtls.pdf
@@ -413,12 +415,6 @@ CW_CREATE_PROTOCOL_MESSAGE(*transportHdrPtr,8 , return CWErrorRaise(CW_ERROR_OUT
 
 	CWProtocolStore32(transportHdrPtr, val);
 	// end of second 32 bits
-/*
-	if(valuesPtr->bindingValuesPtr != NULL){
-		if (!CWAssembleTransportHeaderBinding(transportHdrPtr, valuesPtr->bindingValuesPtr))
-			return CW_FALSE;
-	}
-*/
 	return CW_TRUE;
 }
 
@@ -1012,4 +1008,146 @@ void CWFreeMessageFragments(CWProtocolMessage* messages, int fragmentsNum)
 char * CWParseSessionID(CWProtocolMessage *msgPtr, int len)
 {
 	return CWProtocolRetrieveRawBytes(msgPtr,16);
+}
+
+// Assemble a CAPWAP Data Packet creating Transport Header.
+// completeMsgPtr is an array of fragments (can be of size 1 if the packet doesn't need fragmentation)
+CWBool CWAssembleDataMessage(CWProtocolMessage **completeMsgPtr,
+		int *fragmentsNumPtr,
+		int PMTU,
+		CWProtocolMessage *frame,
+		int is_crypted,
+		int keepAlive)
+{
+
+	CWProtocolMessage transportHdr;
+	CWProtocolTransportHeaderValues transportVal;
+
+	if(completeMsgPtr == NULL || fragmentsNumPtr == NULL || frame == NULL ) return CWErrorRaise(CW_ERROR_WRONG_ARG, NULL);
+	
+//	CWDebugLog("PMTU: %d", PMTU);
+	
+	// handle fragmentation
+	
+	PMTU = PMTU - gMaxCAPWAPHeaderSizeBinding;
+	
+	if(PMTU > 0) {
+		PMTU = (PMTU/8)*8; // CAPWAP fragments are made of groups of 8 bytes
+		if(PMTU == 0) goto cw_dont_fragment;
+		
+//		CWDebugLog("Aligned PMTU: %d", PMTU);
+		*fragmentsNumPtr = (frame->offset) / PMTU;
+		if((frame->offset % PMTU) != 0) (*fragmentsNumPtr)++;
+		//CWDebugLog("Fragments #: %d", *fragmentsNumPtr);
+	} else {
+	cw_dont_fragment:
+		*fragmentsNumPtr = 1;
+	}
+	
+	
+	/*
+	 * Elena Agostini - 02/2014
+	 *
+	 * BUG Valgrind: transportVal.type not initialized
+	 */
+	transportVal.type=0;
+	if( frame->data_msgType == CW_IEEE_802_11_FRAME_TYPE ) transportVal.type = 1;
+	
+	if(*fragmentsNumPtr == 1) {
+			
+		transportVal.isFragment = transportVal.last = transportVal.fragmentOffset = transportVal.fragmentID = 0;
+		transportVal.payloadType = is_crypted;		
+
+		// Assemble Message Elements
+		
+		if(keepAlive){
+			if(!(CWAssembleTransportHeaderKeepAliveData(&transportHdr, &transportVal,keepAlive))) {
+				CW_FREE_PROTOCOL_MESSAGE(transportHdr);
+				return CW_FALSE; // will be handled by the caller
+			} 
+		}else{
+			 
+			if(!(CWAssembleTransportHeader(&transportHdr, &transportVal))) {
+				CW_FREE_PROTOCOL_MESSAGE(transportHdr);
+				return CW_FALSE; // will be handled by the caller
+			} 
+		}
+				
+		CW_CREATE_OBJECT_ERR(*completeMsgPtr, CWProtocolMessage, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
+		
+		/*
+		 * Elena Agostini - 04/2014
+		 * 
+		 * KeepAlive Packet was malformed without message element length field
+		 */
+		if(keepAlive) {
+			CW_CREATE_PROTOCOL_MESSAGE(((*completeMsgPtr)[0]), transportHdr.offset + frame->offset + 2, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
+		}
+		else {
+			CW_CREATE_PROTOCOL_MESSAGE(((*completeMsgPtr)[0]), transportHdr.offset + frame->offset, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
+		}
+			
+		CWProtocolStoreMessage(&((*completeMsgPtr)[0]), &transportHdr);
+		
+		if(keepAlive){
+			unsigned short int messageElementLength = 22;
+			CWProtocolStore16(&((*completeMsgPtr)[0]), messageElementLength);
+		}
+	
+		CWProtocolStoreMessage(&((*completeMsgPtr)[0]), frame);
+		
+		CW_FREE_PROTOCOL_MESSAGE(transportHdr);
+	} else {
+		
+		int fragID = CWGetFragmentID();
+		int totalSize = frame->offset;
+		
+		//CWDebugLog("%d Fragments", *fragmentsNumPtr);
+		CW_CREATE_PROTOCOL_MSG_ARRAY_ERR(*completeMsgPtr, *fragmentsNumPtr, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
+		frame->offset = 0;
+
+		int i;
+		for(i = 0; i < *fragmentsNumPtr; i++) { // for each fragment to assemble
+			int fragSize;
+			
+			transportVal.isFragment = 1;
+			transportVal.fragmentOffset = (frame->offset) / 8;
+			transportVal.fragmentID = fragID;
+			transportVal.payloadType = is_crypted;
+			
+			if(i < ((*fragmentsNumPtr)-1)) { // not last fragment
+				fragSize = PMTU;
+				transportVal.last = 0;
+			} else { // last fragment
+				fragSize = totalSize - (((*fragmentsNumPtr)-1) * PMTU);
+				transportVal.last = 1;
+			}
+		
+			CWDebugLog("Fragment #:%d, offset:%d, bytes stored:%d/%d", i, transportVal.fragmentOffset, fragSize, totalSize);
+			
+			// Assemble Transport Header for this fragment
+			if(keepAlive){
+				if(!(CWAssembleTransportHeaderKeepAliveData(&transportHdr, &transportVal,keepAlive))) {
+					CW_FREE_PROTOCOL_MESSAGE(transportHdr);
+					CW_FREE_OBJECT(completeMsgPtr);
+					return CW_FALSE; // will be handled by the caller
+				}
+			}else{
+				if(!(CWAssembleTransportHeader(&transportHdr, &transportVal))) {
+					CW_FREE_PROTOCOL_MESSAGE(transportHdr);
+					CW_FREE_OBJECT(completeMsgPtr);
+					return CW_FALSE; // will be handled by the caller
+				}
+			}
+
+			
+			CW_CREATE_PROTOCOL_MESSAGE(((*completeMsgPtr)[i]), transportHdr.offset + fragSize, return CWErrorRaise(CW_ERROR_OUT_OF_MEMORY, NULL););
+			CWProtocolStoreMessage(&((*completeMsgPtr)[i]), &transportHdr);
+			CWProtocolStoreRawBytes(&((*completeMsgPtr)[i]), &((frame->msg)[frame->offset]), fragSize);
+			(frame->offset) += fragSize;
+			
+			CW_FREE_PROTOCOL_MESSAGE(transportHdr);
+		}
+	}
+	return CW_TRUE;
 }

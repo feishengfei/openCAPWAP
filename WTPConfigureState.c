@@ -165,12 +165,6 @@ CWBool CWParseConfigureResponseMessage (char *msg,
 		CWParseFormatMsgElem(&completeMsg,&type,&len);
 		/* CWDebugLog("Parsing Message Element: %u, len: %u", type, len); */
 	
-		if(CWBindingCheckType(type))
-		{
-			completeMsg.offset += len;
-			continue;	
-		}
-
 		switch(type) {
 			case CW_MSG_ELEMENT_AC_IPV4_LIST_CW_TYPE:
 				if(!(CWParseACIPv4List(&completeMsg, len, &(valuesPtr->ACIPv4ListInfo)))) return CW_FALSE;

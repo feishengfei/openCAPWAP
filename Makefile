@@ -36,7 +36,7 @@ WTP_OBJS = WTPDiscoveryState.o WTPJoinState.o WTPConfigureState.o WTPDataCheckSt
 #CW objects
 CW_OBJS =  CWCommon.o CWConfigFile.o CWErrorHandling.o CWList.o CWSafeList.o \
 		   CWSyslog.o CWNetwork.o CWProtocol.o CWRandom.o CWSecurity.o CWOpenSSLBio.o \
-		   CWStevens.o CWThread.o CWBinding.o CWAVL.o \
+		   CWStevens.o CWThread.o  CWAVL.o \
 		   timerlib.o
 
  
