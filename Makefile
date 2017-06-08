@@ -39,7 +39,6 @@ CW_OBJS =  CWCommon.o CWConfigFile.o CWErrorHandling.o CWList.o CWSafeList.o \
 		   CWStevens.o CWThread.o CWBinding.o CWAVL.o \
 		   timerlib.o
 
-WUA_OBJS = WUA.o
  
 AC_SRCS = $(AC_OBJS:.o=.c) 
 WTP_SRCS = $(WTP_OBJS:.o=.c)
@@ -61,11 +60,11 @@ $(AC_NAME): $(CW_OBJS) $(AC_OBJS)
 $(WTP_NAME): $(CW_OBJS) $(WTP_OBJS) 
 	$(CC) -DWRITE_STD_OUTPUT $(CW_OBJS) $(WTP_OBJS) $(LDFLAGS) -o $@
 
-$(WUA_NAME): $(WUA_OBJS) 
-	$(CC) $(WUA_OBJS)  $(LDFLAGS) -o $@
-
 clean: 
-	$(RM) $(AC_NAME) $(WTP_NAME) $(WUA_NAME) $(AC_OBJS) $(WTP_OBJS) $(WUA_OBJS) 
+	$(RM) $(AC_NAME) $(WTP_NAME) $(WUA_NAME) \
+		$(CW_OBJS) \
+		$(AC_OBJS) \
+		$(WTP_OBJS)
 
 %.o:%.c
 	$(CC) $(CFLAGS) -c \
