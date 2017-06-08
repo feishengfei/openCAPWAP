@@ -17,7 +17,7 @@ __inline__ void CWDebugLog(const char *format, ...)
 	va_end(args);
 }
 
-void CWLogInitFile(char *processName)
+void CWLogInitFile(const char *processName)
 {
 	openlog(processName, LOG_PID, LOG_DAEMON);
 }

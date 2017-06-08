@@ -3,5 +3,5 @@
 
 __inline__ void CWLog(const char *format, ...);
 __inline__ void CWDebugLog(const char *format, ...);
-void CWLogInitFile(char *fileName);
+void CWLogInitFile(const char *fileName);
 #endif

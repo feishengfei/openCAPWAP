@@ -560,17 +560,8 @@ int main (int argc, const char * argv[])
 
 	CWErrorHandlingInitLib();
 
-	/*
-	if(!CWParseSettingsFile()){
-		//Elena: fprintf
-		fprintf(stderr, "Can't start WTP %d\n", __LINE__);
-		exit(1);
-	}
-	*/
-	
 	//Elena Agostini - 05/2014
-	CWLogInitFile(wtpLogFile);
-	strncpy(gLogFileName, wtpLogFile, strlen(wtpLogFile));
+	CWLogInitFile(argv[0]);
 	
 	/* Capwap receive packets list */
 	if (!CWErr(CWCreateSafeList(&gPacketReceiveList)))
