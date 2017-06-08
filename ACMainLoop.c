@@ -100,21 +100,10 @@ void CWACSetNewGenericHandshakeDataThread(genericHandshakeThreadPtr * genericThr
 }
 
 void CWACEnterMainLoop() {
-
 	struct sigaction act;
 	
 	CWLog("AC enters in the MAIN_LOOP");
-	
-	/* set signals
-	 * all the thread we spawn will inherit these settings
-	 */
-
-        /*
-         * BUG UMR03
-         *
-         * 20/10/2009 - Donato Capitella 
-         */
-        sigemptyset(&act.sa_mask);
+	sigemptyset(&act.sa_mask);
 
 	act.sa_flags = 0;
 	/* called when a timer requested by the thread has expired */
@@ -135,11 +124,13 @@ void CWACEnterMainLoop() {
 		exit(1);
 	}
 	
+	/*
 	CWThread thread_interface;
 	if(!CWErr(CWCreateThread(&thread_interface, CWInterface, NULL))) {
 		CWLog("Error starting Interface Thread");
 		exit(1);
 	}
+	*/
 
 	CW_REPEAT_FOREVER {
 		/* CWACManageIncomingPacket will be called 
@@ -613,7 +604,7 @@ __inline__ genericHandshakeThreadPtr CWWTPThreadGenericByAddress(CWNetworkLev4Ad
 	}
 	
 	CWThreadMutexUnlock(&gWTPsMutex);
-	CWLog("+++++ NON Trovato");
+	CWLog("+++++ Not found");
 	
 	return NULL;		
 }
@@ -731,7 +722,6 @@ CW_THREAD_RETURN_TYPE CWManageWTP(void *arg) {
 		CWThreadMutexUnlock(&gWTPs[i].interfaceMutex);
 
 		if (gWTPs[i].isRequestClose) {
-
 			CWLog("Request close thread");
 			_CWCloseThread(i);
 		}
@@ -913,7 +903,6 @@ CW_THREAD_RETURN_TYPE CWManageWTP(void *arg) {
 							/*
 							 * DTLS Data Session AC
 							 */
-							//TODO
 							
 							CWCloseThread();
 						}

@@ -11,28 +11,33 @@ CFLAGS =  -Wall -g -O0 -D_REENTRANT
 
 # Capwap Debugging
 
-#CFLAGS += -DCW_DEBUGGING 
+CFLAGS += -DCW_DEBUGGING 
 #CFLAGS += -DOPENSSL_NO_KRB5
 
 
 RM = /bin/rm -f 
 
 # list of generated object files for AC. 
-AC_OBJS = AC.o ACConfigFile.o ACMainLoop.o ACDiscoveryState.o ACJoinState.o \
-	ACConfigureState.o ACDataCheckState.o ACRunState.o ACProtocol_User.o \
-	ACRetransmission.o CWCommon.o CWConfigFile.o CWErrorHandling.o CWList.o \
-	CWSyslog.o ACMultiHomedSocket.o ACProtocol.o CWSafeList.o CWNetwork.o CWProtocol.o \
-	CWRandom.o CWSecurity.o CWOpenSSLBio.o CWStevens.o CWThread.o CWBinding.o \
-	ACInterface.o ACSettingsFile.o timerlib.o \
-	CWAVL.o
+AC_OBJS = ACDiscoveryState.o ACJoinState.o ACConfigureState.o ACDataCheckState.o ACRunState.o ACRetransmission.o \
+		  ACConfigFile.o ACSettingsFile.o \
+		  ACProtocol.o ACProtocol_User.o \
+		  ACMainLoop.o ACMultiHomedSocket.o \
+		  AC.o
+
+#ACInterface.o 
 
 # list of generated object files for WTP.
-WTP_OBJS = WTP.o WTPConfigFile.o WTPProtocol.o WTPProtocol_User.o \
-	WTPDiscoveryState.o WTPJoinState.o WTPConfigureState.o WTPDataCheckState.o WTPRunState.o WTPRunStateCheck.o \
-	WTPRetransmission.o WTPSulkingState.o CWCommon.o CWConfigFile.o CWErrorHandling.o CWSafeList.o CWList.o CWSyslog.o CWNetwork.o \
-	CWProtocol.o CWRandom.o CWSecurity.o CWOpenSSLBio.o CWStevens.o CWThread.o CWBinding.o \
-	WTPSettingsFile.o timerlib.o \
-	CWAVL.o 
+WTP_OBJS = WTPDiscoveryState.o WTPJoinState.o WTPConfigureState.o WTPDataCheckState.o WTPRunState.o \
+		   WTPSulkingState.o WTPRunStateCheck.o WTPRetransmission.o \
+		   WTPConfigFile.o WTPSettingsFile.o \
+		   WTPProtocol.o WTPProtocol_User.o \
+		   WTP.o
+
+#CW objects
+CW_OBJS =  CWCommon.o CWConfigFile.o CWErrorHandling.o CWList.o CWSafeList.o \
+		   CWSyslog.o CWNetwork.o CWProtocol.o CWRandom.o CWSecurity.o CWOpenSSLBio.o \
+		   CWStevens.o CWThread.o CWBinding.o CWAVL.o \
+		   timerlib.o
 
 WUA_OBJS = WUA.o
  
@@ -50,11 +55,11 @@ WUA_NAME = WUA
 # top-level rule, to compile everything. 
 all: $(AC_NAME) $(WTP_NAME) 
 
-$(AC_NAME): $(AC_OBJS) 
-	$(CC) $(AC_OBJS) $(LDFLAGS) -o $@
+$(AC_NAME): $(CW_OBJS) $(AC_OBJS) 
+	$(CC) $(CW_OBJS) $(AC_OBJS) $(LDFLAGS) -o $@
 
-$(WTP_NAME): $(WTP_OBJS) 
-	$(CC) -DWRITE_STD_OUTPUT $(WTP_OBJS) $(LDFLAGS) -o $@
+$(WTP_NAME): $(CW_OBJS) $(WTP_OBJS) 
+	$(CC) -DWRITE_STD_OUTPUT $(CW_OBJS) $(WTP_OBJS) $(LDFLAGS) -o $@
 
 $(WUA_NAME): $(WUA_OBJS) 
 	$(CC) $(WUA_OBJS)  $(LDFLAGS) -o $@
